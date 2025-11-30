@@ -22,7 +22,7 @@ async function createBookmark() {
     },
     body: JSON.stringify({
       title: 'GitHub',
-      url: 'https://github.com',
+      url: 'https://droguier.com',
       description: 'Plataforma de desarrollo colaborativo',
       tags: ['desarrollo', 'git', 'código']
     })

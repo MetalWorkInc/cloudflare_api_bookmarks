@@ -1,46 +1,8 @@
 /**
- * Cloudflare Worker API for Bookmarks CRUD
- * Manages bookmarks with Create, Read, Update, Delete operations
+ * Entry point for Cloudflare Worker - delegates to resource routers
  */
-
-// Helper function to generate unique IDs
-function generateId() {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2);
-}
-
-// Helper function to create JSON response
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
-}
-
-// Validate bookmark data
-function validateBookmark(data) {
-  const errors = [];
-  
-  if (!data.title || typeof data.title !== 'string' || data.title.trim() === '') {
-    errors.push('Title is required and must be a non-empty string');
-  }
-  
-  if (!data.url || typeof data.url !== 'string' || data.url.trim() === '') {
-    errors.push('URL is required and must be a non-empty string');
-  } else {
-    try {
-      new URL(data.url);
-    } catch (e) {
-      errors.push('URL must be a valid URL');
-    }
-  }
-  
-  return errors;
-}
+import makeBookmarksRouter from './routes/bookmarks.js';
+import { jsonResponse } from './lib/utils.js';
 
 // GET all bookmarks
 async function getAllBookmarks(env) {
@@ -211,12 +173,12 @@ async function deleteBookmark(env, id) {
   }
 }
 
-// Router to handle different routes
+// Router to handle different routes (delegates to modules)
 async function handleRequest(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
-  
+
   // Handle CORS preflight
   if (method === 'OPTIONS') {
     return new Response(null, {
@@ -227,33 +189,14 @@ async function handleRequest(request, env) {
       },
     });
   }
-  
-  // Route: GET /bookmarks - Get all bookmarks
-  if (path === '/bookmarks' && method === 'GET') {
-    return getAllBookmarks(env);
+
+  // Mount bookmarks router
+  if (path.startsWith('/bookmarks')) {
+    const router = makeBookmarksRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
   }
-  
-  // Route: POST /bookmarks - Create bookmark
-  if (path === '/bookmarks' && method === 'POST') {
-    return createBookmark(env, request);
-  }
-  
-  // Route: GET /bookmarks/:id - Get specific bookmark
-  const getMatch = path.match(/^\/bookmarks\/([^\/]+)$/);
-  if (getMatch && method === 'GET') {
-    return getBookmarkById(env, getMatch[1]);
-  }
-  
-  // Route: PUT /bookmarks/:id - Update bookmark
-  if (getMatch && method === 'PUT') {
-    return updateBookmark(env, getMatch[1], request);
-  }
-  
-  // Route: DELETE /bookmarks/:id - Delete bookmark
-  if (getMatch && method === 'DELETE') {
-    return deleteBookmark(env, getMatch[1]);
-  }
-  
+
   // Root endpoint - API info
   if (path === '/' && method === 'GET') {
     return jsonResponse({
@@ -268,7 +211,7 @@ async function handleRequest(request, env) {
       },
     });
   }
-  
+
   // 404 - Route not found
   return jsonResponse({
     success: false,
