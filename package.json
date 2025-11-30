@@ -1,0 +1,22 @@
+{
+  "name": "cloudflare-api-bookmarks",
+  "version": "1.0.0",
+  "description": "Simple API for bookmarks data using Cloudflare Workers",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test/api-test.js"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "api",
+    "bookmarks"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.51.0"
+  }
+}
