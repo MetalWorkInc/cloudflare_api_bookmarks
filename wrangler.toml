@@ -1,9 +1,9 @@
-name = "cloudflare-api-bookmarks"
+name = "statics"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
 # KV Namespace binding for storing bookmarks
 [[kv_namespaces]]
 binding = "BOOKMARKS_KV"
-id = "droguier-bookmark-kv"
-preview_id = "droguier-kv"
+id = "564e8a6653a546f2b4ce048b126b9756"
+preview_id = "daa6161d58a1490f9fd1ac79c1457604"
