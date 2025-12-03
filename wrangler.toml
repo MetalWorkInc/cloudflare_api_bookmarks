@@ -1,9 +1,14 @@
 name = "statics"
 main = "src/index.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-12-02"
 
 # KV Namespace binding for storing bookmarks
 [[kv_namespaces]]
 binding = "BOOKMARKS_KV"
 id = "564e8a6653a546f2b4ce048b126b9756"
 preview_id = "daa6161d58a1490f9fd1ac79c1457604"
+
+[[d1_databases]]
+binding = "datastoraged01"
+database_name = "datastoraged01"
+database_id = "266bdca3-6cf1-4e63-852f-52831b38e07b"

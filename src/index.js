@@ -1,177 +1,9 @@
 /**
  * Entry point for Cloudflare Worker - delegates to resource routers
  */
-import makeBookmarksRouter from './routes/bookmarks.js';
+import makeBookmarksRouter from './routes/bookmarks';
+import makeCurriculumVitaeRouter from './routes/curriculumVitae';
 import { jsonResponse } from './lib/utils.js';
-
-// GET all bookmarks
-async function getAllBookmarks(env) {
-  try {
-    const list = await env.BOOKMARKS_KV.list();
-    const bookmarks = [];
-    
-    for (const key of list.keys) {
-      const bookmark = await env.BOOKMARKS_KV.get(key.name, { type: 'json' });
-      if (bookmark) {
-        bookmarks.push(bookmark);
-      }
-    }
-    
-    return jsonResponse({
-      success: true,
-      data: bookmarks,
-      count: bookmarks.length,
-    });
-  } catch (error) {
-    return jsonResponse({
-      success: false,
-      error: 'Failed to retrieve bookmarks',
-      message: error.message,
-    }, 500);
-  }
-}
-
-// GET bookmark by ID
-async function getBookmarkById(env, id) {
-  try {
-    const bookmark = await env.BOOKMARKS_KV.get(id, { type: 'json' });
-    
-    if (!bookmark) {
-      return jsonResponse({
-        success: false,
-        error: 'Bookmark not found',
-      }, 404);
-    }
-    
-    return jsonResponse({
-      success: true,
-      data: bookmark,
-    });
-  } catch (error) {
-    return jsonResponse({
-      success: false,
-      error: 'Failed to retrieve bookmark',
-      message: error.message,
-    }, 500);
-  }
-}
-
-// POST - Create new bookmark
-async function createBookmark(env, request) {
-  try {
-    const data = await request.json();
-    
-    // Validate input
-    const errors = validateBookmark(data);
-    if (errors.length > 0) {
-      return jsonResponse({
-        success: false,
-        errors,
-      }, 400);
-    }
-    
-    const id = generateId();
-    const bookmark = {
-      id,
-      title: data.title.trim(),
-      url: data.url.trim(),
-      description: data.description ? data.description.trim() : '',
-      tags: data.tags || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    await env.BOOKMARKS_KV.put(id, JSON.stringify(bookmark));
-    
-    return jsonResponse({
-      success: true,
-      data: bookmark,
-      message: 'Bookmark created successfully',
-    }, 201);
-  } catch (error) {
-    return jsonResponse({
-      success: false,
-      error: 'Failed to create bookmark',
-      message: error.message,
-    }, 500);
-  }
-}
-
-// PUT - Update bookmark
-async function updateBookmark(env, id, request) {
-  try {
-    const existingBookmark = await env.BOOKMARKS_KV.get(id, { type: 'json' });
-    
-    if (!existingBookmark) {
-      return jsonResponse({
-        success: false,
-        error: 'Bookmark not found',
-      }, 404);
-    }
-    
-    const data = await request.json();
-    
-    // Validate input
-    const errors = validateBookmark(data);
-    if (errors.length > 0) {
-      return jsonResponse({
-        success: false,
-        errors,
-      }, 400);
-    }
-    
-    const updatedBookmark = {
-      ...existingBookmark,
-      title: data.title.trim(),
-      url: data.url.trim(),
-      description: data.description ? data.description.trim() : '',
-      tags: data.tags || [],
-      updatedAt: new Date().toISOString(),
-    };
-    
-    await env.BOOKMARKS_KV.put(id, JSON.stringify(updatedBookmark));
-    
-    return jsonResponse({
-      success: true,
-      data: updatedBookmark,
-      message: 'Bookmark updated successfully',
-    });
-  } catch (error) {
-    return jsonResponse({
-      success: false,
-      error: 'Failed to update bookmark',
-      message: error.message,
-    }, 500);
-  }
-}
-
-// DELETE bookmark
-async function deleteBookmark(env, id) {
-  try {
-    const existingBookmark = await env.BOOKMARKS_KV.get(id, { type: 'json' });
-    
-    if (!existingBookmark) {
-      return jsonResponse({
-        success: false,
-        error: 'Bookmark not found',
-      }, 404);
-    }
-    
-    await env.BOOKMARKS_KV.delete(id);
-    
-    return jsonResponse({
-      success: true,
-      message: 'Bookmark deleted successfully',
-      data: existingBookmark,
-    });
-  } catch (error) {
-    return jsonResponse({
-      success: false,
-      error: 'Failed to delete bookmark',
-      message: error.message,
-    }, 500);
-  }
-}
 
 // Router to handle different routes (delegates to modules)
 async function handleRequest(request, env) {
@@ -185,17 +17,32 @@ async function handleRequest(request, env) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, X-API-Token',
       },
     });
   }
 
-  // Mount bookmarks router
-  if (path.startsWith('/bookmarks')) {
-    const router = makeBookmarksRouter(env);
-    const res = await router(request, path, method);
-    if (res) return res;
-  }
+  // Validate API Token (skip for GET on root endpoint)
+  //if (!(path === '/' && method === 'GET')) {
+    const token = request.headers.get('X-API-Token');
+    const validToken = env.API_TOKEN || 'your-secret-token-here-change-in-production';
+    
+    if (!token) {
+      return jsonResponse({
+        success: false,
+        error: 'Unauthorized',
+        message: 'API token is required. Please include X-API-Token header.',
+      }, 401);
+    }
+    
+    if (token !== validToken) {
+      return jsonResponse({
+        success: false,
+        error: 'Forbidden',
+        message: 'Invalid API token.',
+      }, 403);
+    }
+  //}
 
   // Root endpoint - API info
   if (path === '/' && method === 'GET') {
@@ -208,8 +55,28 @@ async function handleRequest(request, env) {
         'POST /bookmarks': 'Create new bookmark',
         'PUT /bookmarks/:id': 'Update bookmark',
         'DELETE /bookmarks/:id': 'Delete bookmark',
+        'GET /curriculum': 'Get all curriculum vitae',
+        'GET /curriculum/:id': 'Get curriculum vitae by ID',
+        'POST /curriculum': 'Create new curriculum vitae',
+        'PUT /curriculum/:id': 'Update curriculum vitae',
+        'DELETE /curriculum/:id': 'Delete curriculum vitae',
       },
     });
+  }
+
+  // Mount bookmarks router
+  if (path.startsWith('/bookmarks')) {
+    const router = makeBookmarksRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
+  }
+
+  
+  // Mount curriculum vitae router
+  if (path.startsWith('/curriculum')) {
+    const router = makeCurriculumVitaeRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
   }
 
   // 404 - Route not found

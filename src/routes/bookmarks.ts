@@ -1,11 +1,12 @@
-import makeBookmarksService from '../services/bookmarksService.js';
-import makeBookmarksController from '../controllers/bookmarksController.js';
+import makeBookmarksService from '../app/services/bookmarksService';
+import makeBookmarksController from '../app/controllers/bookmarksController';
+import type { Env } from '../app/types/interface';
 
-export default function makeBookmarksRouter(env) {
+export default function makeBookmarksRouter(env: Env) {
   const service = makeBookmarksService(env);
   const controller = makeBookmarksController(service);
 
-  return async function route(request, path, method) {
+  return async function route(request: Request, path: string, method: string): Promise<Response | null> {
     // path may be '/bookmarks' or '/bookmarks/:id'
     const idMatch = path.match(/^\/bookmarks(?:\/([^\/]+))?$/);
     const id = idMatch ? idMatch[1] : null;
