@@ -1,27 +1,47 @@
-import { generateId } from '../../lib/utils.js';
+import { generateEncryptedId } from '../../lib/utils.js';
 import type { Bookmark ,BookmarkInput } from '../models/Bookmark';
 import type { Env } from '../types/interface';
 
+async function encryptStorageKey(storageKey: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(storageKey + secret);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 export default function makeBookmarksService(env: Env) {
-  const kv = env.BOOKMARKS_KV;
+  const STORAGE_KEY = "BOOKMARKS_STORAGE";
+  const kv = env.STORAGE_KV;
+  const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
+
+  async function getEncryptedKey(): Promise<string> {
+    return await encryptStorageKey(STORAGE_KEY, SECRET);
+  }
+
+  async function getAllBookmarks(): Promise<Bookmark[]> {
+    const encryptedKey = await getEncryptedKey();
+    const data = await kv.get<Bookmark[]>(encryptedKey, { type: 'json' });
+    return data || [];
+  }
+
+  async function saveAllBookmarks(bookmarks: Bookmark[]): Promise<void> {
+    const encryptedKey = await getEncryptedKey();
+    await kv.put(encryptedKey, JSON.stringify(bookmarks));
+  }
 
   async function list(): Promise<Bookmark[]> {
-    const list = await kv.list();
-    const bookmarks: Bookmark[] = [];
-    for (const key of list.keys) {
-      const bookmark = await kv.get<Bookmark>(key.name, { type: 'json' });
-      if (bookmark) bookmarks.push(bookmark);
-    }
-    return bookmarks;
+    return await getAllBookmarks();
   }
 
   async function getById(id: string): Promise<Bookmark | null> {
-    return await kv.get<Bookmark>(id, { type: 'json' });
+    const bookmarks = await getAllBookmarks();
+    return bookmarks.find(b => b.id === id) || null;
   }
 
   async function create(data: BookmarkInput): Promise<Bookmark> {
-    const id = generateId();
+    const bookmarks = await getAllBookmarks();
+    const id = await generateEncryptedId(SECRET);
     const bookmark: Bookmark = {
       id,
       title: data.title.trim(),
@@ -32,31 +52,39 @@ export default function makeBookmarksService(env: Env) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await kv.put(id, JSON.stringify(bookmark));
+    bookmarks.push(bookmark);
+    await saveAllBookmarks(bookmarks);
     return bookmark;
   }
 
   async function update(id: string, data: BookmarkInput): Promise<Bookmark | null> {
-    const existing = await getById(id);
-    if (!existing) return null;
+    const bookmarks = await getAllBookmarks();
+    const index = bookmarks.findIndex(b => b.id === id);
+    if (index === -1) return null;
+    
     const updated: Bookmark = {
-      ...existing,
+      ...bookmarks[index],
       title: data.title.trim(),
       url: data.url.trim(),
-      icon: data.icon ? data.icon.trim() : existing.icon || '',
+      icon: data.icon ? data.icon.trim() : bookmarks[index].icon || '',
       description: data.description ? data.description.trim() : '',
       tags: data.tags || [],
       updatedAt: new Date().toISOString(),
     };
-    await kv.put(id, JSON.stringify(updated));
+    bookmarks[index] = updated;
+    await saveAllBookmarks(bookmarks);
     return updated;
   }
 
   async function remove(id: string): Promise<Bookmark | null> {
-    const existing = await getById(id);
-    if (!existing) return null;
-    await kv.delete(id);
-    return existing;
+    const bookmarks = await getAllBookmarks();
+    const index = bookmarks.findIndex(b => b.id === id);
+    if (index === -1) return null;
+    
+    const deleted = bookmarks[index];
+    bookmarks.splice(index, 1);
+    await saveAllBookmarks(bookmarks);
+    return deleted;
   }
 
   async function validateBookmark(data: unknown): Promise<string[]> {

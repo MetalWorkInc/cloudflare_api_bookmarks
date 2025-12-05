@@ -9,6 +9,7 @@ interface CurriculumVitaeService {
   update(id: string, data: CurriculumVitaeInput): Promise<CurriculumVitae | null>;
   remove(id: string): Promise<CurriculumVitae | null>;
   validateCurriculumVitae(data: unknown): Promise<string[]>;
+  getPersonalCards(): Promise<Array<{id: string, fullName: string, email: string, phone: string}>>;
 }
 
 export default function makeCurriculumVitaeController(service: CurriculumVitaeService) {
@@ -72,5 +73,15 @@ export default function makeCurriculumVitaeController(service: CurriculumVitaeSe
     }
   }
 
-  return { list, get, create, update, remove };
+  async function getPersonalCards(req: Request, env: Env): Promise<Response> {
+    try {
+      const cards = await service.getPersonalCards();
+      return jsonResponse({ success: true, data: cards, count: cards.length });
+    } catch (err) {
+      const error = err as Error;
+      return jsonResponse({ success: false, error: 'Failed to retrieve personal cards', message: error.message }, 500);
+    }
+  }
+
+  return { list, get, create, update, remove, getPersonalCards };
 }

@@ -7,10 +7,11 @@ export default function makeCurriculumVitaeRouter(env: Env) {
   const controller = makeCurriculumVitaeController(service);
 
   return async function route(request: Request, path: string, method: string): Promise<Response | null> {
-    // path may be '/curriculum' or '/curriculum/:id'
+    // path may be '/curriculum' or '/curriculum/:id' or '/curriculum/personalcard'
     const idMatch = path.match(/^\/curriculum(?:\/([^\/]+))?$/);
     const id = idMatch ? idMatch[1] : null;
 
+    if (path === '/curriculum/personalcard' && method === 'GET') return controller.getPersonalCards(request, env);
     if (path === '/curriculum' && method === 'GET') return controller.list(request, env);
     if (path === '/curriculum' && method === 'POST') return controller.create(request, env);
     if (id && method === 'GET') return controller.get(request, env, id);

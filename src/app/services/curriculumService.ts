@@ -184,5 +184,18 @@ export default function makeCurriculumVitaeService(env: Env) {
     return errors;
   }
 
-  return { list, getById, create, update, remove, validateCurriculumVitae };
+  async function getPersonalCards(): Promise<Array<{id: string, fullName: string, email: string, phone: string}>> {
+    const { results } = await db.prepare(
+      'SELECT id, full_name, email, phone FROM curriculum_vitae ORDER BY created_at DESC'
+    ).all<{id: string, full_name: string, email: string, phone: string | null}>();
+    
+    return results.map(row => ({
+      id: row.id,
+      fullName: row.full_name,
+      email: row.email,
+      phone: row.phone || '',
+    }));
+  }
+
+  return { list, getById, create, update, remove, validateCurriculumVitae, getPersonalCards };
 }

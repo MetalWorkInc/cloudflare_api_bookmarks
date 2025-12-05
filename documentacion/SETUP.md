@@ -35,18 +35,18 @@ El KV namespace es donde se almacenarán los marcadores.
 
 #### Para Producción:
 ```bash
-npx wrangler kv:namespace create "BOOKMARKS_KV"
+npx wrangler kv:namespace create "STORAGE_KV"
 ```
 
 #### Para Preview/Development:
 ```bash
-npx wrangler kv:namespace create "BOOKMARKS_KV" --preview
+npx wrangler kv:namespace create "STORAGE_KV" --preview
 ```
 
 Los comandos anteriores te darán IDs como estos:
 ```
-{ binding = "BOOKMARKS_KV", id = "abc123..." }
-{ binding = "BOOKMARKS_KV", preview_id = "xyz789..." }
+{ binding = "STORAGE_KV", id = "abc123..." }
+{ binding = "STORAGE_KV", preview_id = "xyz789..." }
 ```
 
 ### 5. Actualizar wrangler.toml
@@ -55,7 +55,7 @@ Edita el archivo `wrangler.toml` y reemplaza los IDs de ejemplo con los IDs real
 
 ```toml
 [[kv_namespaces]]
-binding = "BOOKMARKS_KV"
+binding = "STORAGE_KV"
 id = "abc123..."  # ← Reemplaza con tu ID real
 preview_id = "xyz789..."  # ← Reemplaza con tu preview ID real
 ```

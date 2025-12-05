@@ -44,7 +44,7 @@ async function testAPI() {
   console.log('Test 1: GET / (API info)');
   try {
     const request = new Request(`${baseURL}/`);
-    const env = { BOOKMARKS_KV: mockKV };
+    const env = { STORAGE_KV: mockKV };
     
     console.log('✓ Root endpoint accessible\n');
   } catch (error) {

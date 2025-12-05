@@ -3,6 +3,7 @@
  */
 import makeBookmarksRouter from './routes/bookmarks';
 import makeCurriculumVitaeRouter from './routes/curriculumVitae';
+import makePartnersEnvRouter from './routes/partnersEnv';
 import { jsonResponse } from './lib/utils.js';
 
 // Router to handle different routes (delegates to modules)
@@ -47,19 +48,11 @@ async function handleRequest(request, env) {
   // Root endpoint - API info
   if (path === '/' && method === 'GET') {
     return jsonResponse({
-      name: 'Cloudflare Bookmarks API',
-      version: '1.0.0',
+      name: 'Cloudflare Statics API',
+      version: '1.0.1',
+      contact: 'droguier@gmail.com',
       endpoints: {
-        'GET /bookmarks': 'Get all bookmarks',
-        'GET /bookmarks/:id': 'Get bookmark by ID',
-        'POST /bookmarks': 'Create new bookmark',
-        'PUT /bookmarks/:id': 'Update bookmark',
-        'DELETE /bookmarks/:id': 'Delete bookmark',
-        'GET /curriculum': 'Get all curriculum vitae',
-        'GET /curriculum/:id': 'Get curriculum vitae by ID',
-        'POST /curriculum': 'Create new curriculum vitae',
-        'PUT /curriculum/:id': 'Update curriculum vitae',
-        'DELETE /curriculum/:id': 'Delete curriculum vitae',
+        'GET /': 'Get info',
       },
     });
   }
@@ -75,6 +68,13 @@ async function handleRequest(request, env) {
   // Mount curriculum vitae router
   if (path.startsWith('/curriculum')) {
     const router = makeCurriculumVitaeRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
+  }
+
+  // Mount partners environment router
+  if (path.startsWith('/partners')) {
+    const router = makePartnersEnvRouter(env);
     const res = await router(request, path, method);
     if (res) return res;
   }
