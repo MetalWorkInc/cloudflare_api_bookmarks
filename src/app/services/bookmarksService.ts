@@ -87,7 +87,23 @@ export default function makeBookmarksService(env: Env) {
     return deleted;
   }
 
-  async function validateBookmark(data: unknown): Promise<string[]> {
+  async function checkDuplicateTitle(title: string, excludeId?: string): Promise<boolean> {
+    const bookmarks = await getAllBookmarks();
+    return bookmarks.some(b => 
+      b.title.toLowerCase().trim() === title.toLowerCase().trim() && 
+      b.id !== excludeId
+    );
+  }
+
+  async function checkDuplicateUrl(url: string, excludeId?: string): Promise<boolean> {
+    const bookmarks = await getAllBookmarks();
+    return bookmarks.some(b => 
+      b.url.toLowerCase().trim() === url.toLowerCase().trim() && 
+      b.id !== excludeId
+    );
+  }
+
+  async function validateBookmark(data: unknown, excludeId?: string): Promise<string[]> {
     const errors: string[] = [];
     console.log('Validating bookmark data:', data);
     
@@ -112,8 +128,28 @@ export default function makeBookmarksService(env: Env) {
         }
     }
 
+    // Validar duplicados solo si los campos básicos son válidos
+    if (bookmark.title && typeof bookmark.title === 'string' && bookmark.title.trim() !== '') {
+      const titleExists = await checkDuplicateTitle(bookmark.title, excludeId);
+      if (titleExists) {
+        errors.push('A bookmark with this title already exists');
+      }
+    }
+
+    if (bookmark.url && typeof bookmark.url === 'string' && bookmark.url.trim() !== '') {
+      try {
+        new URL(bookmark.url);
+        const urlExists = await checkDuplicateUrl(bookmark.url, excludeId);
+        if (urlExists) {
+          errors.push('A bookmark with this URL already exists');
+        }
+      } catch (e) {
+        // El error de URL ya fue agregado arriba
+      }
+    }
+
     return errors;
   }
   
-  return { list, getById, create, update, remove, validateBookmark };
+  return { list, getById, create, update, remove, validateBookmark, checkDuplicateTitle, checkDuplicateUrl };
 }

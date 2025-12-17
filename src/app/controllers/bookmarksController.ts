@@ -8,7 +8,7 @@ interface BookmarkService {
   create(data: BookmarkInput): Promise<Bookmark>;
   update(id: string, data: BookmarkInput): Promise<Bookmark | null>;
   remove(id: string): Promise<Bookmark | null>;
-  validateBookmark(data: unknown): Promise<string[]>;
+  validateBookmark(data: unknown, excludeId?: string): Promise<string[]>;
 }
 
 export default function makeBookmarksController(service: BookmarkService) {
@@ -51,7 +51,7 @@ export default function makeBookmarksController(service: BookmarkService) {
       const exists = await service.getById(id);
       if (!exists) return jsonResponse({ success: false, error: 'Bookmark not found' }, 404);
       const data = await req.json() as unknown;
-      const errors = await service.validateBookmark(data);
+      const errors = await service.validateBookmark(data, id);
       if (errors.length) return jsonResponse({ success: false, errors }, 400);
       const updated = await service.update(id, data as BookmarkInput);
       return jsonResponse({ success: true, data: updated, message: 'Bookmark updated successfully' });
