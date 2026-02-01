@@ -1,6 +1,7 @@
 import { jsonResponse } from '../../lib/utils.js';
 import type { Env } from '../types/interface.js';
 import type { PartnersEnv, PartnersEnvInput } from '../models/PartnersEnv.js';
+import type { SesionEnv } from '../models/Sesion.js';
 
 interface UserSesionService {
   getToken(email: string): Promise<string>;
@@ -20,6 +21,36 @@ const HTTP_STATUS_BAD_REQUEST = 400;
 const HTTP_STATUS_FORBIDDEN = 403;
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
 
+function encryptSesionData(serializedData: string, token: string): string {
+  if (!token) return serializedData;
+  const dataBytes = new TextEncoder().encode(serializedData);
+  const tokenBytes = new TextEncoder().encode(token);
+  const output = new Uint8Array(dataBytes.length);
+  for (let i = 0; i < dataBytes.length; i += 1) {
+    output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
+  }
+  let binary = '';
+  for (const byte of output) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary);
+}
+
+function decryptSesionData(encryptedData: string, token: string): string {
+  if (!token) return encryptedData;
+  const binary = atob(encryptedData);
+  const dataBytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    dataBytes[i] = binary.charCodeAt(i);
+  }
+  const tokenBytes = new TextEncoder().encode(token);
+  const output = new Uint8Array(dataBytes.length);
+  for (let i = 0; i < dataBytes.length; i += 1) {
+    output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
+  }
+  return new TextDecoder().decode(output);
+}
+
 export default function makeUserSesionController(
   userSesionService: UserSesionService,
   partnersEnvService: PartnersEnvService
@@ -30,31 +61,45 @@ export default function makeUserSesionController(
       const data = await req.json() as unknown;
       const errors = await partnersEnvService.validatePartnersEnv(data);
       if (errors.length) {
-        return jsonResponse({ success: false, errors }, HTTP_STATUS_BAD_REQUEST);
+        const response: SesionEnv = {
+          success: false,
+          token: '',
+          data: '',
+          message: 'Bad request',
+        };
+        return jsonResponse(response, HTTP_STATUS_BAD_REQUEST);
       }
 
       const created = await partnersEnvService.create(data as PartnersEnvInput);
 
       try {
         const token = await userSesionService.createSession(created.email, created);
-        
-        return jsonResponse({
-            success: true,
-            data: created,
-            token,
-            message: 'Usuario registrado y sesión creada',
-        }, HTTP_STATUS_CREATED);
+        const response: SesionEnv = {
+          success: true,
+          token,
+          data: encryptSesionData(JSON.stringify(created), token),
+          message: 'Usuario registrado y sesión creada',
+        };
+        return jsonResponse(response, HTTP_STATUS_CREATED);
       } catch (error) {        
-        return jsonResponse({
-            success: true,
-            data: created,
-            message: 'Usuario registrado, pero la sesión no pudo crearse',
-        }, HTTP_STATUS_ACCEPTED);
+        const response: SesionEnv = {
+          success: true,
+          token: '',
+          data: JSON.stringify(created),
+          message: 'Usuario registrado, pero la sesión no pudo crearse',
+        };
+        return jsonResponse(response, HTTP_STATUS_ACCEPTED);
       }
 
     } catch (err) {
       const error = err as Error;
-      return jsonResponse({ success: false, error: 'Failed to register user session', message: error.message }, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+      const response: SesionEnv = {
+        success: false,
+        token: '',
+        data: '',
+        message: `Failed to register user session: ${error.message}`,
+      };
+      return jsonResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -64,26 +109,56 @@ export default function makeUserSesionController(
       const email = typeof data.email === 'string' ? data.email.trim() : '';
 
       if (!email) {
-        return jsonResponse({ success: false, error: 'Bad request' }, HTTP_STATUS_BAD_REQUEST);
+        const response: SesionEnv = {
+          success: false,
+          token: '',
+          data: '',
+          message: 'Bad request',
+        };
+        return jsonResponse(response, HTTP_STATUS_BAD_REQUEST);
       }
 
       const existingSession = await userSesionService.getSession(email);
       if (existingSession) {
         const token = await userSesionService.getToken(email);
-        return jsonResponse({ success: true, token, data: existingSession, message: 'Sesión activa' });
+        const response: SesionEnv = {
+          success: true,
+          token,
+          data: encryptSesionData(JSON.stringify(existingSession), token),
+          message: 'Sesión activa',
+        };
+        return jsonResponse(response,HTTP_STATUS_ACCEPTED);
       }
 
       const partners = await partnersEnvService.getByFilter( { email: email, full_name: '', key: '' } );
       const partner = partners.length > 0 ? partners[0] : null;
       if (!partner) {
-        return jsonResponse({ success: false, error: 'la sesion no es posible' }, HTTP_STATUS_FORBIDDEN);
+        const response: SesionEnv = {
+          success: false,
+          token: '',
+          data: '',
+          message: 'la sesion no es posible',
+        };
+        return jsonResponse(response, HTTP_STATUS_FORBIDDEN);
       }
 
       const token = await userSesionService.createSession(email, partner);
-      return jsonResponse({ success: true, token, data: partner, message: 'Sesión creada' });
+      const response: SesionEnv = {
+        success: true,
+        token,
+        data: encryptSesionData(JSON.stringify(partner), token),
+        message: 'Sesión creada',
+      };
+      return jsonResponse(response);
     } catch (err) {
       const error = err as Error;
-      return jsonResponse({ success: false, error: 'Failed to validate session', message: error.message }, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+      const response: SesionEnv = {
+        success: false,
+        token: '',
+        data: '',
+        message: `Failed to validate session: ${error.message}`,
+      };
+      return jsonResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
   }
 

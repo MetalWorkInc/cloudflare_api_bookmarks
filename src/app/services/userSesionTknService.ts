@@ -50,7 +50,7 @@ function fromBase64(base64: string): Uint8Array {
   return bytes;
 }
 
-async function encryptPayload(email: string, secret: string, payload: PartnersEnv): Promise<string> {
+async function encryptDataload(email: string, secret: string, payload: PartnersEnv): Promise<string> {
   const encoder = new TextEncoder();
   const key = await deriveEmailKey(email, secret);
   const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -62,7 +62,7 @@ async function encryptPayload(email: string, secret: string, payload: PartnersEn
   return toBase64(combined);
 }
 
-async function decryptPayload(email: string, secret: string, encryptedBase64: string): Promise<PartnersEnv> {
+async function decryptDataload(email: string, secret: string, encryptedBase64: string): Promise<PartnersEnv> {
   const key = await deriveEmailKey(email, secret);
   const combined = fromBase64(encryptedBase64);
   const iv = combined.slice(0, 12);
@@ -82,7 +82,7 @@ export default function makeUserSesionTknService(env: Env) {
 
   async function createSession(email: string, partner: PartnersEnv): Promise<string> {
     const token = await getToken(email);
-    const encryptedPayload = await encryptPayload(email.trim().toLowerCase(), SECRET, partner);
+    const encryptedPayload = await encryptDataload(email.trim().toLowerCase(), SECRET, partner);
     await kv.put(token, encryptedPayload);
     return token;
   }
@@ -92,7 +92,7 @@ export default function makeUserSesionTknService(env: Env) {
     const encrypted = await kv.get(token);
     if (!encrypted) return null;
     try {
-      return await decryptPayload(email.trim().toLowerCase(), SECRET, encrypted);
+      return await decryptDataload(email.trim().toLowerCase(), SECRET, encrypted);
     } catch (error) {
       return null;
     }
