@@ -8,7 +8,6 @@ interface PartnersEnvService {
   getByKey(key: string): Promise<PartnersEnv | null>;
   create(data: PartnersEnvInput): Promise<PartnersEnv>;
   update(id: string, data: PartnersEnvInput): Promise<PartnersEnv | null>;
-  remove(id: string): Promise<PartnersEnv | null>;
   validatePartnersEnv(data: unknown): Promise<string[]>;
 }
 
@@ -74,12 +73,24 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
 
   async function remove(req: Request, env: Env, id: string): Promise<Response> {
     try {
-      const deleted = await service.remove(id);
-      if (!deleted) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
-      return jsonResponse({ success: true, data: deleted, message: 'Partner deleted successfully' });
+      const existing = await service.getById(id);
+      if (!existing) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
+
+      const input: PartnersEnvInput = {
+        key: existing.key,
+        full_name: existing.full_name,
+        email: existing.email,
+        phone: existing.phone,
+        summary: existing.summary,
+        active: 0
+      };
+
+      const updated = await service.update(id, input);
+      if (!updated) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
+      return jsonResponse({ success: true, data: updated, message: 'Partner deactivated successfully' });
     } catch (err) {
       const error = err as Error;
-      return jsonResponse({ success: false, error: 'Failed to delete partner', message: error.message }, 500);
+      return jsonResponse({ success: false, error: 'Failed to deactivate partner', message: error.message }, 500);
     }
   }
 

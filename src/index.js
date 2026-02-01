@@ -4,6 +4,7 @@
 import makeBookmarksRouter from './routes/bookmarks';
 import makeCurriculumVitaeRouter from './routes/curriculumVitae';
 import makePartnersEnvRouter from './routes/partnersEnv';
+import makeUserSesionRouter from './routes/userSesion';
 import { jsonResponse } from './lib/utils.js';
 
 // Router to handle different routes (delegates to modules)
@@ -75,6 +76,13 @@ async function handleRequest(request, env) {
   // Mount partners environment router
   if (path.startsWith('/partners')) {
     const router = makePartnersEnvRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
+  }
+
+  // Mount user session router
+  if (path.startsWith('/userSesion')) {
+    const router = makeUserSesionRouter(env);
     const res = await router(request, path, method);
     if (res) return res;
   }

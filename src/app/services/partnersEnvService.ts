@@ -2,17 +2,6 @@ import { generateId } from '../../lib/utils.js';
 import { PartnersEnv, PartnersEnvInput } from '../models/PartnersEnv.js';
 import type { Env } from '../types/interface.js';
 
-interface PartnersEnvRow {
-  id: string;
-  key: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  summary: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 async function encryptKey(key: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(key + secret);
@@ -28,87 +17,147 @@ export default function makePartnersEnvService(env: Env) {
   async function list(): Promise<PartnersEnv[]> {
     const { results } = await db.prepare(
       'SELECT * FROM partners_environment ORDER BY created_at DESC'
-    ).all<PartnersEnvRow>();
+    ).all<PartnersEnv>();
     
     return results.map(row => ({
       id: row.id,
       key: row.key,
-      fullName: row.full_name,
+      full_name: row.full_name,
       email: row.email,
       phone: row.phone || '',
       summary: row.summary || '',
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      active: row.active
     }));
   }
 
   async function getById(id: string): Promise<PartnersEnv | null> {
     const result = await db.prepare(
       'SELECT * FROM partners_environment WHERE id = ?'
-    ).bind(id).first<PartnersEnvRow>();
+    ).bind(id).first<PartnersEnv>();
     
     if (!result) return null;
 
     return {
       id: result.id,
       key: result.key,
-      fullName: result.full_name,
+      full_name: result.full_name,
       email: result.email,
       phone: result.phone || '',
       summary: result.summary || '',
-      createdAt: result.created_at,
-      updatedAt: result.updated_at,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+      active: result.active
     };
   }
 
   async function getByKey(key: string): Promise<PartnersEnv | null> {
     const result = await db.prepare(
       'SELECT * FROM partners_environment WHERE key = ?'
-    ).bind(key).first<PartnersEnvRow>();
+    ).bind(key).first<PartnersEnv>();
     
     if (!result) return null;
 
     return {
       id: result.id,
       key: result.key,
-      fullName: result.full_name,
+      full_name: result.full_name,
       email: result.email,
       phone: result.phone || '',
       summary: result.summary || '',
-      createdAt: result.created_at,
-      updatedAt: result.updated_at,
+      created_at: result.created_at,
+      updated_at: result.updated_at,
+      active: result.active
     };
   }
 
-  async function create(data: PartnersEnvInput): Promise<PartnersEnv> {
+  async function getByFilter(filter: PartnersEnvInput): Promise<PartnersEnv[]> {
+    let sql = 'SELECT * FROM partners_environment WHERE 1=1';
+    const params: string[] = [];
+
+    if (filter.key && filter.key.trim() !== '') {
+      const encryptedKey = await encryptKey(filter.key.trim(), SECRET);
+      sql += ' AND key = ?';
+      params.push(encryptedKey);
+    }
+
+    if (filter.full_name && filter.full_name.trim() !== '') {
+      sql += ' AND full_name = ?';
+      params.push(filter.full_name.trim());
+    }
+
+    if (filter.email && filter.email.trim() !== '') {
+      sql += ' AND email = ?';
+      params.push(filter.email.trim());
+    }
+
+    if (filter.phone && filter.phone.trim() !== '') {
+      sql += ' AND phone = ?';
+      params.push(filter.phone.trim());
+    }
+
+    if (filter.summary && filter.summary.trim() !== '') {
+      sql += ' AND summary = ?';
+      params.push(filter.summary.trim());
+    }
+
+    const { results } = await db.prepare(sql).bind(...params).all<PartnersEnv>();
+
+    return results.map(row => ({
+      id: row.id,
+      key: row.key,
+      full_name: row.full_name,
+      email: row.email,
+      phone: row.phone || '',
+      summary: row.summary || '',
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      active: row.active
+    }));
+  }
+
+  async function create(data: PartnersEnvInput): Promise<PartnersEnv> {    
+    /**backoffice - simple rapid implement */    
+    const emailLower = data.email.toLowerCase();
+    //const encryptedKey = await encryptKey(data.key, SECRET); // PROD CONSERVAR
+    const encryptedKey = await encryptKey(emailLower, SECRET); // PROD ELIMINAR
+    const encryptedOriginalKey = await encryptKey(data.key, SECRET);
+
+    //validate unicidad email
+    const existing = await db.prepare(
+      'SELECT id FROM partners_environment WHERE email = ?'
+    ).bind(emailLower).first<{ id: string }>();
+
+    if (existing) {
+      throw new Error('Email already exists');
+    }
+
     const id = generateId();
     const now = new Date().toISOString();
-    const encryptedKey = await encryptKey(data.key, SECRET);
-
+    //
+    const active = data.active ?? 1;
     await db.prepare(`
-      INSERT INTO partners_environment (id, key, full_name, email, phone, summary, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO partners_environment (id, key, full_name, email, phone, summary, active, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       encryptedKey,
-      data.fullName,
-      data.email,
+      data.full_name,
+      emailLower,
       data.phone || null,
-      data.summary || null,
+      encryptedOriginalKey,
+      active,
       now,
       now
     ).run();
 
-    return {
-      id,
-      key: encryptedKey,
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
-      summary: data.summary,
-      createdAt: now,
-      updatedAt: now,
-    };
+    const created = await getById(id);
+    if (!created) {
+      throw new Error('Failed to fetch created partner environment');
+    }
+
+    return created;
   }
 
   async function update(id: string, data: PartnersEnvInput): Promise<PartnersEnv | null> {
@@ -116,18 +165,22 @@ export default function makePartnersEnvService(env: Env) {
     if (!existing) return null;
 
     const now = new Date().toISOString();
-    const encryptedKey = await encryptKey(data.key, SECRET);
+    const encryptedKey = data.key === existing.key
+      ? existing.key
+      : await encryptKey(data.key, SECRET);
+    const active = data.active ?? existing.active;
 
     await db.prepare(`
       UPDATE partners_environment
-      SET key = ?, full_name = ?, email = ?, phone = ?, summary = ?, updated_at = ?
+      SET key = ?, full_name = ?, email = ?, phone = ?, summary = ?, active = ?, updated_at = ?
       WHERE id = ?
     `).bind(
       encryptedKey,
-      data.fullName,
+      data.full_name,
       data.email,
       data.phone || null,
       data.summary || null,
+      active,
       now,
       id
     ).run();
@@ -135,22 +188,23 @@ export default function makePartnersEnvService(env: Env) {
     return {
       id,
       key: encryptedKey,
-      fullName: data.fullName,
+      full_name: data.full_name,
       email: data.email,
       phone: data.phone,
       summary: data.summary,
-      createdAt: existing.createdAt,
-      updatedAt: now,
+      created_at: existing.created_at,
+      updated_at: now,
+      active
     };
   }
 
-  async function remove(id: string): Promise<PartnersEnv | null> {
-    const existing = await getById(id);
-    if (!existing) return null;
-
-    await db.prepare('DELETE FROM partners_environment WHERE id = ?').bind(id).run();
-    return existing;
-  }
+  ///async function remove(id: string): Promise<PartnersEnv | null> {
+  ///  const existing = await getById(id);
+  ///  if (!existing) return null;
+  ///
+  ///  await db.prepare('DELETE FROM partners_environment WHERE id = ?').bind(id).run();
+  ///  return existing;
+  ///}
 
   async function validatePartnersEnv(data: unknown): Promise<string[]> {
     const errors: string[] = [];
@@ -193,9 +247,10 @@ export default function makePartnersEnvService(env: Env) {
     list,
     getById,
     getByKey,
+    getByFilter,
     create,
     update,
-    remove,
+    //remove,
     validatePartnersEnv,
   };
 }
