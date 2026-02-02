@@ -20,7 +20,7 @@ async function handleRequest(request, env) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-API-Token',
+        'Access-Control-Allow-Headers': 'Content-Type, X-API-Token, X-Session-Email, X-Session-Token',
       },
     });
   }
