@@ -6,6 +6,7 @@ import makeCurriculumVitaeRouter from './routes/curriculumVitae';
 import makePartnersEnvRouter from './routes/partnersEnv';
 import makeUserSesionRouter from './routes/userSesion';
 import { jsonResponse } from './lib/utils.js';
+import makeUserSesionTknService from './app/services/userSesionTknService';
 
 // Router to handle different routes (delegates to modules)
 async function handleRequest(request, env) {
@@ -56,6 +57,42 @@ async function handleRequest(request, env) {
         'GET /': 'Get info',
       },
     });
+  }
+
+  // Session validation for protected routes
+  if (path.startsWith('/bookmarks') || path.startsWith('/partners')) {
+    const sessionEmail = request.headers.get('X-Session-Email');
+    const sessionToken = request.headers.get('X-Session-Token');
+    console.log('Validating sessionEmail for:', sessionEmail);
+    console.log('Validating sessionToken for:', sessionToken);
+    if (!sessionEmail || !sessionToken) {
+      return jsonResponse({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Session is required. Include X-Session-Email and X-Session-Token headers.',
+      }, 401);
+    }
+
+    const sessionService = makeUserSesionTknService(env);
+    const expectedToken = await sessionService.getToken(sessionEmail);
+    if (sessionToken !== expectedToken || !expectedToken) {
+      return jsonResponse({
+        success: false,
+        error: 'Forbidden',
+        message: 'Invalid session token.',
+      }, 403);
+    }
+
+    /***
+    const session = await sessionService.getSession(sessionEmail);
+    if (!session) {
+      return jsonResponse({
+        success: false,
+        error: 'Forbidden',
+        message: 'Session not found or expired.',
+      }, 403);
+    } 
+    */
   }
 
   // Mount bookmarks router

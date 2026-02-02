@@ -2,6 +2,7 @@ import { jsonResponse } from '../../lib/utils.js';
 import type { Env } from '../types/interface.js';
 import type { PartnersEnv, PartnersEnvInput } from '../models/PartnersEnv.js';
 import type { SesionEnv } from '../models/Sesion.js';
+import { validateSesionEnv } from '../models/Sesion.js';
 
 interface UserSesionService {
   getToken(email: string): Promise<string>;
@@ -20,6 +21,20 @@ const HTTP_STATUS_ACCEPTED = 202;
 const HTTP_STATUS_BAD_REQUEST = 400;
 const HTTP_STATUS_FORBIDDEN = 403;
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
+
+function buildSesionResponse(response: SesionEnv, status = 200): Response {
+  const errors = validateSesionEnv(response);
+  if (errors.length) {
+    const fallback: SesionEnv = {
+      success: false,
+      token: '',
+      data: '',
+      message: `Invalid SesionEnv: ${errors.join(', ')}`,
+    };
+    return jsonResponse(fallback, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+  }
+  return jsonResponse(response, status);
+}
 
 function encryptSesionData(serializedData: string, token: string): string {
   if (!token) return serializedData;
@@ -67,7 +82,7 @@ export default function makeUserSesionController(
           data: '',
           message: 'Bad request',
         };
-        return jsonResponse(response, HTTP_STATUS_BAD_REQUEST);
+        return buildSesionResponse(response, HTTP_STATUS_BAD_REQUEST);
       }
 
       const created = await partnersEnvService.create(data as PartnersEnvInput);
@@ -80,7 +95,7 @@ export default function makeUserSesionController(
           data: encryptSesionData(JSON.stringify(created), token),
           message: 'Usuario registrado y sesión creada',
         };
-        return jsonResponse(response, HTTP_STATUS_CREATED);
+        return buildSesionResponse(response, HTTP_STATUS_CREATED);
       } catch (error) {        
         const response: SesionEnv = {
           success: true,
@@ -88,7 +103,7 @@ export default function makeUserSesionController(
           data: JSON.stringify(created),
           message: 'Usuario registrado, pero la sesión no pudo crearse',
         };
-        return jsonResponse(response, HTTP_STATUS_ACCEPTED);
+        return buildSesionResponse(response, HTTP_STATUS_ACCEPTED);
       }
 
     } catch (err) {
@@ -99,7 +114,7 @@ export default function makeUserSesionController(
         data: '',
         message: `Failed to register user session: ${error.message}`,
       };
-      return jsonResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+      return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -115,7 +130,7 @@ export default function makeUserSesionController(
           data: '',
           message: 'Bad request',
         };
-        return jsonResponse(response, HTTP_STATUS_BAD_REQUEST);
+        return buildSesionResponse(response, HTTP_STATUS_BAD_REQUEST);
       }
 
       const existingSession = await userSesionService.getSession(email);
@@ -127,7 +142,7 @@ export default function makeUserSesionController(
           data: encryptSesionData(JSON.stringify(existingSession), token),
           message: 'Sesión activa',
         };
-        return jsonResponse(response,HTTP_STATUS_ACCEPTED);
+        return buildSesionResponse(response, HTTP_STATUS_ACCEPTED);
       }
 
       const partners = await partnersEnvService.getByFilter( { email: email, full_name: '', key: '' } );
@@ -139,7 +154,7 @@ export default function makeUserSesionController(
           data: '',
           message: 'la sesion no es posible',
         };
-        return jsonResponse(response, HTTP_STATUS_FORBIDDEN);
+        return buildSesionResponse(response, HTTP_STATUS_FORBIDDEN);
       }
 
       const token = await userSesionService.createSession(email, partner);
@@ -149,7 +164,7 @@ export default function makeUserSesionController(
         data: encryptSesionData(JSON.stringify(partner), token),
         message: 'Sesión creada',
       };
-      return jsonResponse(response);
+      return buildSesionResponse(response);
     } catch (err) {
       const error = err as Error;
       const response: SesionEnv = {
@@ -158,7 +173,7 @@ export default function makeUserSesionController(
         data: '',
         message: `Failed to validate session: ${error.message}`,
       };
-      return jsonResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+      return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
   }
 
