@@ -57,9 +57,9 @@ export default function makeBookmarksService(env: Env) {
     return bookmark;
   }
 
-  async function update(id: string, data: BookmarkInput): Promise<Bookmark | null> {
+  async function update(data: BookmarkInput): Promise<Bookmark | null> {
     const bookmarks = await getAllBookmarks();
-    const index = bookmarks.findIndex(b => b.id === id);
+    const index = bookmarks.findIndex(b => b.id === data.id);
     if (index === -1) return null;
     
     const updated: Bookmark = {
@@ -151,5 +151,5 @@ export default function makeBookmarksService(env: Env) {
     return errors;
   }
   
-  return { list, getById, create, update, remove, validateBookmark, checkDuplicateTitle, checkDuplicateUrl };
+  return { list, getById, create, update, remove, validateBookmark };
 }

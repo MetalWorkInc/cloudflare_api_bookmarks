@@ -10,6 +10,7 @@ async function encryptKey(key: string, secret: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+
 export default function makePartnersEnvService(env: Env) {
   const db = env.datastoraged01;
   const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
@@ -18,8 +19,9 @@ export default function makePartnersEnvService(env: Env) {
     const { results } = await db.prepare(
       'SELECT * FROM partners_environment ORDER BY created_at DESC'
     ).all<PartnersEnv>();
+    console.log('partners_environment results:', results);
     
-    return results.map(row => ({
+    return results.map<PartnersEnv>(row => ({
       id: row.id,
       key: row.key,
       full_name: row.full_name,
@@ -28,8 +30,9 @@ export default function makePartnersEnvService(env: Env) {
       summary: row.summary || '',
       created_at: row.created_at,
       updated_at: row.updated_at,
-      active: row.active
-    }));
+      active: row.active,
+      bookmarks_favorites: row.bookmarks_favorites
+    })) ;
   }
 
   async function getById(id: string): Promise<PartnersEnv | null> {
@@ -48,7 +51,8 @@ export default function makePartnersEnvService(env: Env) {
       summary: result.summary || '',
       created_at: result.created_at,
       updated_at: result.updated_at,
-      active: result.active
+      active: typeof result.active === 'string' ? parseInt(result.active, 10) : result.active,
+      bookmarks_favorites: result.bookmarks_favorites
     };
   }
 
@@ -68,7 +72,8 @@ export default function makePartnersEnvService(env: Env) {
       summary: result.summary || '',
       created_at: result.created_at,
       updated_at: result.updated_at,
-      active: result.active
+      active: typeof result.active === 'string' ? parseInt(result.active, 10) : result.active,
+      bookmarks_favorites: result.bookmarks_favorites
     };
   }
 
@@ -113,7 +118,8 @@ export default function makePartnersEnvService(env: Env) {
       summary: row.summary || '',
       created_at: row.created_at,
       updated_at: row.updated_at,
-      active: row.active
+      active: row.active,
+      bookmarks_favorites: row.bookmarks_favorites
     }));
   }
 
@@ -165,36 +171,35 @@ export default function makePartnersEnvService(env: Env) {
     if (!existing) return null;
 
     const now = new Date().toISOString();
-    const encryptedKey = data.key === existing.key
-      ? existing.key
-      : await encryptKey(data.key, SECRET);
     const active = data.active ?? existing.active;
+    const bookmarksFavorites = data.bookmarks_favorites ?? "";
 
     await db.prepare(`
       UPDATE partners_environment
-      SET key = ?, full_name = ?, email = ?, phone = ?, summary = ?, active = ?, updated_at = ?
+      SET full_name = ?, email = ?, phone = ?, summary = ?, active = ? , bookmarks_favorites = ? , updated_at = ?
       WHERE id = ?
     `).bind(
-      encryptedKey,
       data.full_name,
       data.email,
       data.phone || null,
       data.summary || null,
       active,
+      bookmarksFavorites,
       now,
       id
     ).run();
 
     return {
       id,
-      key: encryptedKey,
+      key: existing.key,
       full_name: data.full_name,
       email: data.email,
       phone: data.phone,
       summary: data.summary,
       created_at: existing.created_at,
       updated_at: now,
-      active
+      active,
+      bookmarks_favorites: data.bookmarks_favorites ?? ""
     };
   }
 

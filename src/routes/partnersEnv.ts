@@ -15,6 +15,7 @@ export default function makePartnersEnvRouter(env: Env) {
 
     if (path === '/partners' && method === 'GET') return controller.list(request, env);
     if (path === '/partners' && method === 'POST') return controller.create(request, env);
+    if (path === '/partners/bookmarks' && method === 'PUT') return controller.update_bookmarks(request);
     if (key && method === 'GET') return controller.getByKey(request, env, key);
     if (id && method === 'GET') return controller.get(request, env, id);
     if (id && method === 'PUT') return controller.update(request, env, id);

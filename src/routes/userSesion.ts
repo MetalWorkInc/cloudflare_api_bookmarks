@@ -9,8 +9,9 @@ export default function makeUserSesionRouter(env: Env) {
   const controller = makeUserSesionController(userSesionService, partnersEnvService);
 
   return async function route(request: Request, path: string, method: string): Promise<Response | null> {
-    if (path === '/userSesion/registrar' && method === 'POST') return controller.registrar_user(request, env);
-    if (path === '/userSesion/validar' && method === 'POST') return controller.validar_user(request, env);
+    if (path === '/userSesion/registrar' && method === 'POST') return controller.registrar_user(request);
+    if (path === '/userSesion/validar' && method === 'POST') return controller.validar_user(request);
+    if (path === '/userSesion/getSesion' && method === 'POST') return controller.getSesion(request);
 
     return null;
   };

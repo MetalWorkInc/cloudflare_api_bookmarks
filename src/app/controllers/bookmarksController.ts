@@ -6,13 +6,13 @@ interface BookmarkService {
   list(): Promise<Bookmark[]>;
   getById(id: string): Promise<Bookmark | null>;
   create(data: BookmarkInput): Promise<Bookmark>;
-  update(id: string, data: BookmarkInput): Promise<Bookmark | null>;
+  update(data: BookmarkInput): Promise<Bookmark | null>;
   remove(id: string): Promise<Bookmark | null>;
   validateBookmark(data: unknown, excludeId?: string): Promise<string[]>;
 }
 
 export default function makeBookmarksController(service: BookmarkService) {
-  async function list(req: Request, env: Env): Promise<Response> {
+  async function list(): Promise<Response> {
     try {
       const items = await service.list();
       return jsonResponse({ success: true, data: items, count: items.length });
@@ -22,7 +22,7 @@ export default function makeBookmarksController(service: BookmarkService) {
     }
   }
 
-  async function get(req: Request, env: Env, id: string): Promise<Response> {
+  async function get(id: string): Promise<Response> {
     try {
       const item = await service.getById(id);
       if (!item) return jsonResponse({ success: false, error: 'Bookmark not found' }, 404);
@@ -33,7 +33,7 @@ export default function makeBookmarksController(service: BookmarkService) {
     }
   }
 
-  async function create(req: Request, env: Env): Promise<Response> {
+  async function create(req: Request): Promise<Response> {
     try {
       const data = await req.json() as unknown;
       const errors = await service.validateBookmark(data);
@@ -46,14 +46,26 @@ export default function makeBookmarksController(service: BookmarkService) {
     }
   }
 
-  async function update(req: Request, env: Env, id: string): Promise<Response> {
+  async function update(req: Request): Promise<Response> {
     try {
-      const exists = await service.getById(id);
-      if (!exists) return jsonResponse({ success: false, error: 'Bookmark not found' }, 404);
       const data = await req.json() as unknown;
-      const errors = await service.validateBookmark(data, id);
+      if (!data || typeof data !== 'object') {
+        return jsonResponse({ success: false, error: 'Invalid request' }, 400);
+      }
+
+      const d = data as Record<string, unknown>;
+
+      if (!d.id || typeof d.id !== 'string' || d.id.trim() === '') {
+        return jsonResponse({ success: false, error: 'Invalid request' }, 400);
+      }
+
+
+      const exists = await service.getById(d.id);
+      if (!exists) return jsonResponse({ success: false, error: 'Bookmark not found' }, 404);
+      
+      const errors = await service.validateBookmark(data, d.id);
       if (errors.length) return jsonResponse({ success: false, errors }, 400);
-      const updated = await service.update(id, data as BookmarkInput);
+      const updated = await service.update(data as BookmarkInput);
       return jsonResponse({ success: true, data: updated, message: 'Bookmark updated successfully' });
     } catch (err) {
       const error = err as Error;
@@ -61,7 +73,7 @@ export default function makeBookmarksController(service: BookmarkService) {
     }
   }
 
-  async function remove(req: Request, env: Env, id: string): Promise<Response> {
+  async function remove(id: string): Promise<Response> {
     try {
       const deleted = await service.remove(id);
       if (!deleted) return jsonResponse({ success: false, error: 'Bookmark not found' }, 404);

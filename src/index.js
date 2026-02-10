@@ -13,6 +13,9 @@ async function handleRequest(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method;
+  
+  // Initialize services
+  const userSesionTknService = makeUserSesionTknService(env);
 
   // Handle CORS preflight
   if (method === 'OPTIONS') {
@@ -20,32 +23,31 @@ async function handleRequest(request, env) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-API-Token, X-Session-Email, X-Session-Token',
+        'Access-Control-Allow-Headers': 'Content-Type, X-API-Token, X-Session-Token',
       },
     });
   }
 
   // Validate API Token (skip for GET on root endpoint)
-  //if (!(path === '/' && method === 'GET')) {
-    const token = request.headers.get('X-API-Token');
-    const validToken = env.API_TOKEN || 'your-secret-token-here-change-in-production';
-    
-    if (!token) {
-      return jsonResponse({
-        success: false,
-        error: 'Unauthorized',
-        message: 'API token is required. Please include X-API-Token header.',
-      }, 401);
-    }
-    
-    if (token !== validToken) {
-      return jsonResponse({
-        success: false,
-        error: 'Forbidden',
-        message: 'Invalid API token.',
-      }, 403);
-    }
-  //}
+  const tokenApi = request.headers.get('X-API-Token');
+  const validTokenApi = env.API_TOKEN || 'x-api-token-value'; // Default token for testing
+  const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
+  
+  if (!tokenApi) {
+    return jsonResponse({
+      success: false,
+      error: 'Unauthorized',
+      message: 'API token is required. Please include X-API-Token header.',
+    }, 401);
+  }
+  
+  if (validTokenApi !== tokenApi) {
+    return jsonResponse({
+      success: false,
+      error: 'Forbidden',
+      message: 'Invalid API token.',
+    }, 403);
+  }
 
   // Root endpoint - API info
   if (path === '/' && method === 'GET') {
@@ -60,21 +62,28 @@ async function handleRequest(request, env) {
   }
 
   // Session validation for protected routes
-  if (path.startsWith('/bookmarks') || path.startsWith('/partners')) {
-    const sessionEmail = request.headers.get('X-Session-Email');
-    const sessionToken = request.headers.get('X-Session-Token');
-    console.log('Validating sessionEmail for:', sessionEmail);
-    console.log('Validating sessionToken for:', sessionToken);
-    if (!sessionEmail || !sessionToken) {
+  if (path.startsWith('/bookmarks') 
+    || path.startsWith('/partners')) {
+  
+    const sessionToken = request.headers.get('X-Session-Token');    
+
+    if (!sessionToken) {
       return jsonResponse({
         success: false,
         error: 'Unauthorized',
-        message: 'Session is required. Include X-Session-Email and X-Session-Token headers.',
+        message: 'Session is required. Include X-Session-Token header.',
       }, 401);
     }
-
-    const sessionService = makeUserSesionTknService(env);
-    const expectedToken = await sessionService.getToken(sessionEmail);
+    
+    const sessionEmail = await userSesionTknService.getEmail(sessionToken);
+    if (!sessionEmail) {
+      return jsonResponse({
+        success: false,
+        error: 'Forbidden',
+        message: 'Invalid session token.',
+      }, 401);
+    }
+    const expectedToken = await userSesionTknService.getToken(sessionEmail);
     if (sessionToken !== expectedToken || !expectedToken) {
       return jsonResponse({
         success: false,

@@ -10,7 +10,9 @@ CREATE TABLE partners_environment (
     phone TEXT,
     summary TEXT,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    bookmarks_favorites TEXT
 );
 
 -- Indexes for faster queries

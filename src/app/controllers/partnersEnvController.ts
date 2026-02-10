@@ -71,6 +71,46 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
     }
   }
 
+  
+  async function update_bookmarks(req: Request): Promise<Response> {
+    try {
+      const data = await req.json() as unknown;
+      if (!data || typeof data !== 'object') {
+        return jsonResponse({ success: false, error: 'Invalid request' }, 400);
+      }
+
+      const d = data as Record<string, unknown>;
+
+      if (!d.key || typeof d.key !== 'string' || d.key.trim() === '') {
+        return jsonResponse({ success: false, error: 'Invalid request' }, 400);
+      }
+
+      if (!Array.isArray(d.bookmarks_favorites) || !d.bookmarks_favorites.every((item) => typeof item === 'string')) {
+        return jsonResponse({ success: false, error: 'Invalid request' }, 400);
+      }
+
+      const existing = await service.getByKey(d.key.trim());
+      if (!existing) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
+
+      const input = {
+        key: existing.key,
+        full_name: existing.full_name,
+        email: existing.email,
+        phone: existing.phone,
+        summary: existing.summary,
+        active: existing.active,
+        bookmarks_favorites: d.bookmarks_favorites
+      } as PartnersEnvInput & { bookmarks_favorites: string[] };
+
+      const updated = await service.update(existing.id, input);
+      if (!updated) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
+      return jsonResponse({ success: true, data: updated, message: 'Partner updated successfully' });
+    } catch (err) {
+      const error = err as Error;
+      return jsonResponse({ success: false, error: 'Failed to update partner', message: error.message }, 500);
+    }
+  }
+
   async function remove(req: Request, env: Env, id: string): Promise<Response> {
     try {
       const existing = await service.getById(id);
@@ -100,6 +140,7 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
     getByKey,
     create,
     update,
+    update_bookmarks,
     remove,
   };
 }

@@ -11,11 +11,11 @@ export default function makeBookmarksRouter(env: Env) {
     const idMatch = path.match(/^\/bookmarks(?:\/([^\/]+))?$/);
     const id = idMatch ? idMatch[1] : null;
 
-    if (path === '/bookmarks' && method === 'GET') return controller.list(request, env);
-    if (path === '/bookmarks' && method === 'POST') return controller.create(request, env);
-    if (id && method === 'GET') return controller.get(request, env, id);
-    if (id && method === 'PUT') return controller.update(request, env, id);
-    if (id && method === 'DELETE') return controller.remove(request, env, id);
+    if (path === '/bookmarks' && method === 'GET') return controller.list();
+    if (path === '/bookmarks' && method === 'POST') return controller.create(request);
+    if (id && method === 'GET') return controller.get(id);
+    if (id && method === 'PUT') return controller.update(request);
+    if (id && method === 'DELETE') return controller.remove(id);
 
     return null; // not handled
   };
