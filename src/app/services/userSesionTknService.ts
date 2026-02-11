@@ -139,7 +139,10 @@ export default function makeUserSesionTknService(env: Env) {
   async function createSession(email: string, partner: PartnersEnvSession): Promise<string> {
     const token = await getToken(email);
     const encryptedPayload = await encryptDataload(email.trim().toLowerCase(), SECRET, partner);
-    await kv.put(token, encryptedPayload);
+    // Session expires in 24 hours (86400 seconds)
+    await kv.put(token, encryptedPayload, {
+      expirationTtl: 86400, // 24 hours
+    });
     return token;
   }
 
