@@ -265,8 +265,8 @@ export default function makeUserSesionController( userSesionService: UserSesionS
         };
         return buildSesionResponse(response, HTTP_STATUS_BAD_REQUEST);
       }
-
-      const decrypted = decryptSesionData(encryptedBody, apiToken);
+      var credentialObj = await JSON.parse(encryptedBody) as { credential?: string };
+      const decrypted = decryptSesionData(credentialObj.credential || '', apiToken);
       let data: GoogleAuthLogInput;
       try {
         data = JSON.parse(decrypted) as GoogleAuthLogInput;
@@ -290,6 +290,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
         data: '',
         message: `Failed to register user session: ${error.message}`,
       };
+      console.error('Error in validar_google_auth:', error);
       return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
   }
@@ -350,6 +351,71 @@ function decryptSesionData(encryptedData: string, token: string): string {
   return new TextDecoder().decode(output);
 }
 
+  /**
+   * Encripta datos usando XOR con un token y convierte a base64 URL-safe
+   */
+  /*
+  function encryptSesionData(serializedData: string, token: string): string {
+     if (!token) return serializedData;
+    
+    const dataBytes = new TextEncoder().encode(serializedData);
+    const tokenBytes = new TextEncoder().encode(token);
+    const output = new Uint8Array(dataBytes.length);
+    
+    // XOR byte por byte
+    for (let i = 0; i < dataBytes.length; i++) {
+      output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
+    }
+    
+    // Convertir Uint8Array a base64 de forma segura
+    const binaryString = Array.from(output, byte => String.fromCharCode(byte)).join('');
+    const base64 = btoa(binaryString);
+    
+    // Convertir a base64 URL-safe: reemplazar caracteres problemáticos
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }
+*/
+  /**
+   * Desencripta datos desde base64 URL-safe usando XOR con un token
+   */
+  /*
+  function decryptSesionData(encryptedData: string, token: string): string {
+    if (!token) return encryptedData;
+    
+    try {
+      // Convertir de base64 URL-safe a base64 estándar
+      let base64 = encryptedData.replace(/-/g, '+').replace(/_/g, '/');
+      
+      // Agregar padding si es necesario
+      const padding = base64.length % 4;
+      if (padding > 0) {
+        base64 += '='.repeat(4 - padding);
+      }
+      
+      // Decodificar base64 a string binario
+      const binaryString = atob(base64);
+      
+      // Convertir string binario a Uint8Array
+      const dataBytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        dataBytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      const tokenBytes = new TextEncoder().encode(token);
+      const output = new Uint8Array(dataBytes.length);
+      
+      // XOR byte por byte para desencriptar
+      for (let i = 0; i < dataBytes.length; i++) {
+        output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
+      }
+      
+      return new TextDecoder().decode(output);
+    } catch (error) {
+      console.error('Error al desencriptar datos:', error);
+      throw new Error('No se pudo desencriptar los datos de sesión');
+    }
+  }
+  */
 export function partnerSesionFromPartner(partner: PartnersEnv): PartnersEnvSession {
     return {
     email: partner.email,

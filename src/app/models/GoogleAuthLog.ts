@@ -18,7 +18,6 @@ export interface GoogleAuthLog {
 }
 
 export interface GoogleAuthLogInput {
-	id: string;
 	iss?: string;
 	azp?: string;
 	aud?: string;
@@ -33,5 +32,4 @@ export interface GoogleAuthLogInput {
 	iat?: number;
 	exp?: number;
 	jti?: string;
-	created_at?: string;
 }
