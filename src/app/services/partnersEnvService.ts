@@ -201,14 +201,6 @@ export default function makePartnersEnvService(env: Env) {
     };
   }
 
-  ///async function remove(id: string): Promise<PartnersEnv | null> {
-  ///  const existing = await getById(id);
-  ///  if (!existing) return null;
-  ///
-  ///  await db.prepare('DELETE FROM partners_environment WHERE id = ?').bind(id).run();
-  ///  return existing;
-  ///}
-
   async function validatePartnersEnv(data: unknown): Promise<string[]> {
     const errors: string[] = [];
     console.log('Validating bookmark data:', data);
@@ -219,12 +211,6 @@ export default function makePartnersEnvService(env: Env) {
     }
 
     const d = data as Record<string, unknown>;
-    
-    /*
-    if (!d.key || typeof d.key !== 'string' || d.key.trim() === '') {
-      errors.push('Key is required and must be a non-empty string');
-    }
-    */
     
     if (!d.full_name || typeof d.full_name !== 'string' || d.full_name.trim() === '') {
       errors.push('Full name is required and must be a non-empty string');

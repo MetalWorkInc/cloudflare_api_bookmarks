@@ -1,6 +1,64 @@
 import type { Env } from '../types/interface.js';
 import type { PartnersEnvSession } from '../models/PartnersEnv.js';
 
+export default function makeUserSesionTknService(env: Env) {
+  const kv = env.STORAGE_KV;
+  const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
+  const API_TOKEN = env.API_TOKEN || 'default-api-token';
+
+  async function getToken(email: string): Promise<string> {
+    return encryptEmail(email, SECRET, API_TOKEN);
+  }
+
+  async function getEmail(token: string): Promise<string | null> {
+    if (!token) return null;
+    return decryptEmail(token, SECRET, API_TOKEN);
+  }
+
+  async function createSession(email: string, partner: PartnersEnvSession): Promise<string> {
+    const token = await getToken(email);
+    const encryptedPayload = await encryptDataload(email.trim().toLowerCase(), SECRET, partner);
+    // Session expires in 24 hours (86400 seconds)
+    await kv.put(token, encryptedPayload, {
+      expirationTtl: 86400, // 24 hours
+    });
+    return token;
+  }
+
+  async function getSessionByToken(token: string): Promise<PartnersEnvSession | null> {
+    const encrypted = await kv.get(token);
+    const email = await getEmail(token);
+    if (!encrypted || !email) return null;
+    try {
+      return await decryptDataload(email.trim().toLowerCase(), SECRET, encrypted);
+    } catch (error) {
+      return null;
+    }
+  }
+  
+  async function getSessionByEmail(email: string): Promise<PartnersEnvSession | null> {
+    const token = await getToken(email);
+    const encrypted = await kv.get(token);
+    if (!encrypted) return null;
+    try {
+      return await decryptDataload(email.trim().toLowerCase(), SECRET, encrypted);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  return {
+    getEmail,
+    getToken,
+    createSession,
+    getSessionByToken,
+    getSessionByEmail,
+  };
+}
+
+  /****************************************************************************************
+   *  functions for encryption and decryption of session data
+  ****************************************************************************************/
 async function deriveEmailKey(email: string, secret: string): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
@@ -25,7 +83,7 @@ async function deriveEmailKey(email: string, secret: string): Promise<CryptoKey>
   );
 }
 
-async function deriveSecretKey(secret: string): Promise<CryptoKey> {
+async function deriveSecretKey(secret: string, apiToken: string): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -38,7 +96,7 @@ async function deriveSecretKey(secret: string): Promise<CryptoKey> {
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: encoder.encode('email-token-salt'),
+      salt: encoder.encode(apiToken),
       iterations: 100000,
       hash: 'SHA-256',
     },
@@ -56,10 +114,10 @@ async function deterministicIv(email: string, secret: string): Promise<Uint8Arra
   return new Uint8Array(hashBuffer).slice(0, 12);
 }
 
-async function encryptEmail(email: string, secret: string): Promise<string> {
+async function encryptEmail(email: string, secret: string, apiToken: string): Promise<string> {
   const normalizedEmail = email.trim().toLowerCase();
   const encoder = new TextEncoder();
-  const key = await deriveSecretKey(secret);
+  const key = await deriveSecretKey(secret, apiToken);
   const iv = await deterministicIv(normalizedEmail, secret);
   const plaintext = encoder.encode(normalizedEmail);
   const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
@@ -69,9 +127,9 @@ async function encryptEmail(email: string, secret: string): Promise<string> {
   return toBase64(combined);
 }
 
-async function decryptEmail(token: string, secret: string): Promise<string | null> {
+async function decryptEmail(token: string, secret: string, apiToken: string): Promise<string | null> {
   try {
-    const key = await deriveSecretKey(secret);
+    const key = await deriveSecretKey(secret, apiToken);
     const combined = fromBase64(token);
     if (combined.byteLength <= 12) return null;
     const iv = combined.slice(0, 12);
@@ -121,58 +179,4 @@ async function decryptDataload(email: string, secret: string, encryptedBase64: s
   const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
   const decoder = new TextDecoder();
   return JSON.parse(decoder.decode(new Uint8Array(decrypted))) as PartnersEnvSession;
-}
-
-export default function makeUserSesionTknService(env: Env) {
-  const kv = env.STORAGE_KV;
-  const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
-
-  async function getToken(email: string): Promise<string> {
-    return encryptEmail(email, SECRET);
-  }
-
-  async function getEmail(token: string): Promise<string | null> {
-    if (!token) return null;
-    return decryptEmail(token, SECRET);
-  }
-
-  async function createSession(email: string, partner: PartnersEnvSession): Promise<string> {
-    const token = await getToken(email);
-    const encryptedPayload = await encryptDataload(email.trim().toLowerCase(), SECRET, partner);
-    // Session expires in 24 hours (86400 seconds)
-    await kv.put(token, encryptedPayload, {
-      expirationTtl: 86400, // 24 hours
-    });
-    return token;
-  }
-
-  async function getSessionByToken(token: string): Promise<PartnersEnvSession | null> {
-    const encrypted = await kv.get(token);
-    const email = await getEmail(token);
-    if (!encrypted || !email) return null;
-    try {
-      return await decryptDataload(email.trim().toLowerCase(), SECRET, encrypted);
-    } catch (error) {
-      return null;
-    }
-  }
-  
-  async function getSessionByEmail(email: string): Promise<PartnersEnvSession | null> {
-    const token = await getToken(email);
-    const encrypted = await kv.get(token);
-    if (!encrypted) return null;
-    try {
-      return await decryptDataload(email.trim().toLowerCase(), SECRET, encrypted);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  return {
-    getEmail,
-    getToken,
-    createSession,
-    getSessionByToken,
-    getSessionByEmail,
-  };
 }
