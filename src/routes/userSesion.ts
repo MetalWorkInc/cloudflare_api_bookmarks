@@ -14,7 +14,7 @@ export default function makeUserSesionRouter(env: Env) {
     if (path === '/userSesion/registrar' && method === 'POST') return controller.registrar_user(request);
     if (path === '/userSesion/validar' && method === 'POST') return controller.validar_user(request);
     if (path === '/userSesion/getSesion' && method === 'POST') return controller.getSesion(request);
-    if (path === '/userSesion/googleAuth' && method === 'POST') return controller.validar_google_auth(request);
+    if (path === '/userSesion/google-auth' && method === 'POST') return controller.validar_google_auth(request);
 
     return null;
   };

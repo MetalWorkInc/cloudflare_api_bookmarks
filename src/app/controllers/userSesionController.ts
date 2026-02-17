@@ -43,38 +43,6 @@ export default function makeUserSesionController( userSesionService: UserSesionS
     try {
       let sessionEmail = await validar_request(req) || null;
       return fn_registrar_user(sessionEmail || '');
-      /*
-      if (!sessionEmail) {
-        const response: SesionEnv = {
-          success: false,
-          token: '',
-          data: '',
-          message: 'Failed to register user session',
-        };
-        return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
-      }
-      //
-      const partners = await partnersEnvService.getByFilter( { email: sessionEmail, full_name: '', key: '' } );
-      const partner = partners.length == 1 ? partners[0] : null;
-      if (!partner) {
-        const response: SesionEnv = {
-          success: false,
-          token: '',
-          data: '',
-          message: 'Failed to register user session',
-        };
-        return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
-      }
-
-      const token = await userSesionService.createSession(partner.email, partnerSesionFromPartner(partner));
-      const response: SesionEnv = {
-        success: true,
-        token,
-        data: encryptSesionData(JSON.stringify(partnerSesionFromPartner(partner)), token),
-        message: 'Usuario registrado y sesión creada',
-      };
-      return buildSesionResponse(response, HTTP_STATUS_CREATED);
-      */
     } catch (err) {
       const error = err as Error;
       const response: SesionEnv = {
@@ -286,9 +254,9 @@ export default function makeUserSesionController( userSesionService: UserSesionS
   ****************************************************************************************/
  async function validar_google_auth(req: Request): Promise<Response> {
     try {
-      const sessionToken = req.headers.get('X-Session-Token');
+      const apiToken = req.headers.get('X-API-Token');
       const encryptedBody = await req.text();
-      if (!encryptedBody || !sessionToken) {
+      if (!encryptedBody || !apiToken) {
         const response: SesionEnv = {
           success: false,
           token: '',
@@ -298,7 +266,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
         return buildSesionResponse(response, HTTP_STATUS_BAD_REQUEST);
       }
 
-      const decrypted = decryptSesionData(encryptedBody, sessionToken);
+      const decrypted = decryptSesionData(encryptedBody, apiToken);
       let data: GoogleAuthLogInput;
       try {
         data = JSON.parse(decrypted) as GoogleAuthLogInput;
