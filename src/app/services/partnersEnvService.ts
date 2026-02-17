@@ -19,19 +19,17 @@ export default function makePartnersEnvService(env: Env) {
     const { results } = await db.prepare(
       'SELECT * FROM partners_environment ORDER BY created_at DESC'
     ).all<PartnersEnv>();
-    console.log('partners_environment results:', results);
-    
-    return results.map<PartnersEnv>(row => ({
-      id: row.id,
-      key: row.key,
-      full_name: row.full_name,
-      email: row.email,
-      phone: row.phone || '',
-      summary: row.summary || '',
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      active: row.active,
-      bookmarks_favorites: row.bookmarks_favorites
+      return results.map<PartnersEnv>(row => ({
+        id: row.id,
+        key: row.key,
+        full_name: row.full_name,
+        email: row.email,
+        phone: row.phone || '',
+        summary: row.summary || '',
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        active: row.active,
+        bookmarks_favorites: row.bookmarks_favorites
     })) ;
   }
 
@@ -213,6 +211,8 @@ export default function makePartnersEnvService(env: Env) {
 
   async function validatePartnersEnv(data: unknown): Promise<string[]> {
     const errors: string[] = [];
+    console.log('Validating bookmark data:', data);
+
     if (!data || typeof data !== 'object') {
       errors.push('Invalid data format');
       return errors;
@@ -220,11 +220,13 @@ export default function makePartnersEnvService(env: Env) {
 
     const d = data as Record<string, unknown>;
     
+    /*
     if (!d.key || typeof d.key !== 'string' || d.key.trim() === '') {
       errors.push('Key is required and must be a non-empty string');
     }
+    */
     
-    if (!d.fullName || typeof d.fullName !== 'string' || d.fullName.trim() === '') {
+    if (!d.full_name || typeof d.full_name !== 'string' || d.full_name.trim() === '') {
       errors.push('Full name is required and must be a non-empty string');
     }
     

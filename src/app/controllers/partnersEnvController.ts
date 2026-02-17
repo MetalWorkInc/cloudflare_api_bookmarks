@@ -12,10 +12,16 @@ interface PartnersEnvService {
 }
 
 export default function makePartnersEnvController(service: PartnersEnvService) {
+  function withoutId(item: PartnersEnv) {
+    const { id: _id, ...rest } = item;
+    return rest;
+  }
+
   async function list(req: Request, env: Env): Promise<Response> {
     try {
       const items = await service.list();
-      return jsonResponse({ success: true, data: items, count: items.length });
+      const data = items.map(withoutId);
+      return jsonResponse({ success: true, data, count: data.length });
     } catch (err) {
       const error = err as Error;
       return jsonResponse({ success: false, error: 'Failed to retrieve partners', message: error.message }, 500);
@@ -26,7 +32,7 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
     try {
       const item = await service.getById(id);
       if (!item) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
-      return jsonResponse({ success: true, data: item });
+      return jsonResponse({ success: true, data: withoutId(item) });
     } catch (err) {
       const error = err as Error;
       return jsonResponse({ success: false, error: 'Failed to retrieve partner', message: error.message }, 500);
@@ -37,7 +43,7 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
     try {
       const item = await service.getByKey(key);
       if (!item) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
-      return jsonResponse({ success: true, data: item });
+      return jsonResponse({ success: true, data: withoutId(item) });
     } catch (err) {
       const error = err as Error;
       return jsonResponse({ success: false, error: 'Failed to retrieve partner', message: error.message }, 500);
@@ -50,7 +56,7 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
       const errors = await service.validatePartnersEnv(data);
       if (errors.length) return jsonResponse({ success: false, errors }, 400);
       const created = await service.create(data as PartnersEnvInput);
-      return jsonResponse({ success: true, data: created, message: 'Partner created successfully' }, 201);
+      return jsonResponse({ success: true, data: withoutId(created), message: 'Partner created successfully' }, 201);
     } catch (err) {
       const error = err as Error;
       return jsonResponse({ success: false, error: 'Failed to create partner', message: error.message }, 500);
@@ -64,7 +70,7 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
       if (errors.length) return jsonResponse({ success: false, errors }, 400);
       const updated = await service.update(id, data as PartnersEnvInput);
       if (!updated) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
-      return jsonResponse({ success: true, data: updated, message: 'Partner updated successfully' });
+      return jsonResponse({ success: true, data: withoutId(updated), message: 'Partner updated successfully' });
     } catch (err) {
       const error = err as Error;
       return jsonResponse({ success: false, error: 'Failed to update partner', message: error.message }, 500);
@@ -104,7 +110,7 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
 
       const updated = await service.update(existing.id, input);
       if (!updated) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
-      return jsonResponse({ success: true, data: updated, message: 'Partner updated successfully' });
+      return jsonResponse({ success: true, data: withoutId(updated), message: 'Partner updated successfully' });
     } catch (err) {
       const error = err as Error;
       return jsonResponse({ success: false, error: 'Failed to update partner', message: error.message }, 500);
@@ -127,7 +133,7 @@ export default function makePartnersEnvController(service: PartnersEnvService) {
 
       const updated = await service.update(id, input);
       if (!updated) return jsonResponse({ success: false, error: 'Partner not found' }, 404);
-      return jsonResponse({ success: true, data: updated, message: 'Partner deactivated successfully' });
+      return jsonResponse({ success: true, data: withoutId(updated), message: 'Partner deactivated successfully' });
     } catch (err) {
       const error = err as Error;
       return jsonResponse({ success: false, error: 'Failed to deactivate partner', message: error.message }, 500);
