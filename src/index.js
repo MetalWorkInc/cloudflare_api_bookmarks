@@ -5,6 +5,7 @@ import makeBookmarksRouter from './routes/bookmarks';
 import makeCurriculumVitaeRouter from './routes/curriculumVitae';
 import makePartnersEnvRouter from './routes/partnersEnv';
 import makeUserSesionRouter from './routes/userSesion';
+import makeGoogleAuthLogRouter from './routes/googleAuthLog';
 import { jsonResponse } from './lib/utils.js';
 import makeUserSesionTknService from './app/services/userSesionTknService';
 
@@ -63,7 +64,8 @@ async function handleRequest(request, env) {
 
   // Session validation for protected routes
   if (path.startsWith('/bookmarks') 
-    || path.startsWith('/partners')) {
+    || path.startsWith('/partners')
+    || path.startsWith('/googleAuthLog')) {
   
     const sessionToken = request.headers.get('X-Session-Token');    
 
@@ -129,6 +131,13 @@ async function handleRequest(request, env) {
   // Mount user session router
   if (path.startsWith('/userSesion')) {
     const router = makeUserSesionRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
+  }
+
+  // Mount google auth log router
+  if (path.startsWith('/googleAuthLog')) {
+    const router = makeGoogleAuthLogRouter(env);
     const res = await router(request, path, method);
     if (res) return res;
   }

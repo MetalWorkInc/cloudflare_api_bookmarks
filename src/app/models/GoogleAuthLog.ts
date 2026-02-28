@@ -1,3 +1,5 @@
+import { PaginationDto } from '../types/PaginationDto';
+
 export interface GoogleAuthLog {
 	id: string;
 	iss?: string;
@@ -32,4 +34,21 @@ export interface GoogleAuthLogInput {
 	iat?: number;
 	exp?: number;
 	jti?: string;
+}
+
+export class GoogleAuthLogPaginatedResult extends PaginationDto {
+	data: GoogleAuthLogInput[];
+
+	constructor(
+		data: GoogleAuthLogInput[],
+		page: number,
+		pageSize: number,
+		total: number,
+		totalPages: number,
+		hasNext: boolean,
+		hasPrev: boolean,
+	) {
+		super(page, pageSize, total, totalPages, hasNext, hasPrev);
+		this.data = data;
+	}
 }

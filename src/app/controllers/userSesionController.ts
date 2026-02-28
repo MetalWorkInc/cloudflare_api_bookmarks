@@ -1,5 +1,4 @@
 import { jsonResponse } from '../../lib/utils.js';
-import type { Env } from '../types/interface.js';
 import type { PartnersEnv, PartnersEnvInput, PartnersEnvSession } from '../models/PartnersEnv.js';
 import type { SesionEnv } from '../models/Sesion.js';
 import { validateSesionEnv } from '../models/Sesion.js';
@@ -174,6 +173,42 @@ export default function makeUserSesionController( userSesionService: UserSesionS
     }
   }
 
+
+  /****************************************************************************************
+   *  readSesion(req: Request): Promise<Response> 
+  ****************************************************************************************/
+  async function readSesion(req: Request): Promise<Response> {
+    try {
+      const sessionToken = req.headers.get('X-Session-Token') || '';
+
+      if (!sessionToken ) {
+        const response: SesionEnv = {
+          success: false,
+          token: sessionToken,
+          data: '',
+          message: 'Failed to validate session',
+        };
+        return buildSesionResponse(response, HTTP_STATUS_FORBIDDEN);
+      }
+
+      var result = await userSesionService.getSessionByToken(sessionToken);
+      return jsonResponse({
+        success: true,
+        data: result,
+      });
+
+    } catch (err) {
+      const error = err as Error;
+      const response: SesionEnv = {
+        success: false,
+        token: '',
+        data: '',
+        message: `Failed to validate session: ${error.message}`,
+      };
+      return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    }
+  }
+
   async function fn_registrar_user(enail: string): Promise<Response> {
     try {
 
@@ -199,11 +234,12 @@ export default function makeUserSesionController( userSesionService: UserSesionS
         return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
       }
 
-      const token = await userSesionService.createSession(partner.email, partnerSesionFromPartner(partner));
+      var partnerSession = partnerSesionFromPartner(partner);
+      const token = await userSesionService.createSession(partner.email, partnerSession);
       const response: SesionEnv = {
         success: true,
         token,
-        data: encryptSesionData(JSON.stringify(partnerSesionFromPartner(partner)), token),
+        data: encryptSesionData(JSON.stringify(partnerSession), token),
         message: 'Usuario registrado y sesión creada',
       };
       return buildSesionResponse(response, HTTP_STATUS_CREATED);
@@ -220,6 +256,10 @@ export default function makeUserSesionController( userSesionService: UserSesionS
     }
   }
 
+  
+  /****************************************************************************************
+   *  validar_request(req: Request): Promise<Response>
+  ****************************************************************************************/
   async function validar_request(req: Request, body?: { email?: string }): Promise<string | null> {
     var sessionEmail = null;
     try {
@@ -281,7 +321,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
       }
 
       await googleAuthLogService.create(data);
-      return fn_registrar_user(data.email || '');
+      return await fn_registrar_user(data.email || '');
     } catch (err) {
       const error = err as Error;
       const response: SesionEnv = {
@@ -299,6 +339,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
     registrar_user,
     validar_user,
     getSesion,
+    readSesion,
     validar_google_auth
   };
 }
@@ -351,71 +392,6 @@ function decryptSesionData(encryptedData: string, token: string): string {
   return new TextDecoder().decode(output);
 }
 
-  /**
-   * Encripta datos usando XOR con un token y convierte a base64 URL-safe
-   */
-  /*
-  function encryptSesionData(serializedData: string, token: string): string {
-     if (!token) return serializedData;
-    
-    const dataBytes = new TextEncoder().encode(serializedData);
-    const tokenBytes = new TextEncoder().encode(token);
-    const output = new Uint8Array(dataBytes.length);
-    
-    // XOR byte por byte
-    for (let i = 0; i < dataBytes.length; i++) {
-      output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
-    }
-    
-    // Convertir Uint8Array a base64 de forma segura
-    const binaryString = Array.from(output, byte => String.fromCharCode(byte)).join('');
-    const base64 = btoa(binaryString);
-    
-    // Convertir a base64 URL-safe: reemplazar caracteres problemáticos
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  }
-*/
-  /**
-   * Desencripta datos desde base64 URL-safe usando XOR con un token
-   */
-  /*
-  function decryptSesionData(encryptedData: string, token: string): string {
-    if (!token) return encryptedData;
-    
-    try {
-      // Convertir de base64 URL-safe a base64 estándar
-      let base64 = encryptedData.replace(/-/g, '+').replace(/_/g, '/');
-      
-      // Agregar padding si es necesario
-      const padding = base64.length % 4;
-      if (padding > 0) {
-        base64 += '='.repeat(4 - padding);
-      }
-      
-      // Decodificar base64 a string binario
-      const binaryString = atob(base64);
-      
-      // Convertir string binario a Uint8Array
-      const dataBytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        dataBytes[i] = binaryString.charCodeAt(i);
-      }
-      
-      const tokenBytes = new TextEncoder().encode(token);
-      const output = new Uint8Array(dataBytes.length);
-      
-      // XOR byte por byte para desencriptar
-      for (let i = 0; i < dataBytes.length; i++) {
-        output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
-      }
-      
-      return new TextDecoder().decode(output);
-    } catch (error) {
-      console.error('Error al desencriptar datos:', error);
-      throw new Error('No se pudo desencriptar los datos de sesión');
-    }
-  }
-  */
 export function partnerSesionFromPartner(partner: PartnersEnv): PartnersEnvSession {
     return {
     email: partner.email,
