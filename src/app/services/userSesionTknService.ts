@@ -1,10 +1,24 @@
 import type { Env } from '../types/interface.js';
 import type { PartnersEnvSession } from '../models/PartnersEnv.js';
 
+const ALGO_PBKDF2 = 'PBKDF2' as const;
+const ALGO_SHA256 = 'SHA-256' as const;
+const ALGO_AES_GCM = 'AES-GCM' as const;
+const KEY_FORMAT_RAW = 'raw' as const;
+const KEY_USAGE_DERIVE_KEY = 'deriveKey' as const;
+const KEY_USAGE_ENCRYPT = 'encrypt' as const;
+const KEY_USAGE_DECRYPT = 'decrypt' as const;
+const AES_KEY_LENGTH = 256;
+const PBKDF2_ITERATIONS = 100000;
+const IV_BYTE_LENGTH = 12;
+const DEFAULT_SECRET_KEY = 'default-secret-key';
+const DEFAULT_API_TOKEN = 'default-api-token';
+const SESSION_TTL_SECONDS = 86400;
+
 export default function makeUserSesionTknService(env: Env) {
   const kv = env.STORAGE_KV;
-  const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
-  const API_TOKEN = env.API_TOKEN || 'default-api-token';
+  const SECRET = env.DROGUIER_VAR_NAME || DEFAULT_SECRET_KEY;
+  const API_TOKEN = env.API_TOKEN || DEFAULT_API_TOKEN;
 
   async function getToken(email: string): Promise<string> {
     return encryptEmail(email, SECRET, API_TOKEN);
@@ -18,9 +32,9 @@ export default function makeUserSesionTknService(env: Env) {
   async function createSession(email: string, partner: PartnersEnvSession): Promise<string> {
     const token = await getToken(email);
     const encryptedPayload = await encryptDataload(email.trim().toLowerCase(), SECRET, partner);
-    // Session expires in 24 hours (86400 seconds)
+    // Session expires in 24 hours.
     await kv.put(token, encryptedPayload, {
-      expirationTtl: 86400, // 24 hours
+      expirationTtl: SESSION_TTL_SECONDS,
     });
     return token;
   }
@@ -62,56 +76,56 @@ export default function makeUserSesionTknService(env: Env) {
 async function deriveEmailKey(email: string, secret: string): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
-    'raw',
+    KEY_FORMAT_RAW,
     encoder.encode(email),
-    { name: 'PBKDF2' },
+    { name: ALGO_PBKDF2 },
     false,
-    ['deriveKey']
+    [KEY_USAGE_DERIVE_KEY]
   );
 
   return crypto.subtle.deriveKey(
     {
-      name: 'PBKDF2',
+      name: ALGO_PBKDF2,
       salt: encoder.encode(secret),
-      iterations: 100000,
-      hash: 'SHA-256',
+      iterations: PBKDF2_ITERATIONS,
+      hash: ALGO_SHA256,
     },
     keyMaterial,
-    { name: 'AES-GCM', length: 256 },
+    { name: ALGO_AES_GCM, length: AES_KEY_LENGTH },
     false,
-    ['encrypt', 'decrypt']
+    [KEY_USAGE_ENCRYPT, KEY_USAGE_DECRYPT]
   );
 }
 
 async function deriveSecretKey(secret: string, apiToken: string): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
-    'raw',
+    KEY_FORMAT_RAW,
     encoder.encode(secret),
-    { name: 'PBKDF2' },
+    { name: ALGO_PBKDF2 },
     false,
-    ['deriveKey']
+    [KEY_USAGE_DERIVE_KEY]
   );
 
   return crypto.subtle.deriveKey(
     {
-      name: 'PBKDF2',
+      name: ALGO_PBKDF2,
       salt: encoder.encode(apiToken),
-      iterations: 100000,
-      hash: 'SHA-256',
+      iterations: PBKDF2_ITERATIONS,
+      hash: ALGO_SHA256,
     },
     keyMaterial,
-    { name: 'AES-GCM', length: 256 },
+    { name: ALGO_AES_GCM, length: AES_KEY_LENGTH },
     false,
-    ['encrypt', 'decrypt']
+    [KEY_USAGE_ENCRYPT, KEY_USAGE_DECRYPT]
   );
 }
 
 async function deterministicIv(email: string, secret: string): Promise<Uint8Array> {
   const encoder = new TextEncoder();
   const data = encoder.encode(email + secret);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return new Uint8Array(hashBuffer).slice(0, 12);
+  const hashBuffer = await crypto.subtle.digest(ALGO_SHA256, data);
+  return new Uint8Array(hashBuffer).slice(0, IV_BYTE_LENGTH);
 }
 
 async function encryptEmail(email: string, secret: string, apiToken: string): Promise<string> {
@@ -120,7 +134,7 @@ async function encryptEmail(email: string, secret: string, apiToken: string): Pr
   const key = await deriveSecretKey(secret, apiToken);
   const iv = await deterministicIv(normalizedEmail, secret);
   const plaintext = encoder.encode(normalizedEmail);
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+  const encrypted = await crypto.subtle.encrypt({ name: ALGO_AES_GCM, iv }, key, plaintext);
   const combined = new Uint8Array(iv.byteLength + encrypted.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.byteLength);
@@ -131,10 +145,10 @@ async function decryptEmail(token: string, secret: string, apiToken: string): Pr
   try {
     const key = await deriveSecretKey(secret, apiToken);
     const combined = fromBase64(token);
-    if (combined.byteLength <= 12) return null;
-    const iv = combined.slice(0, 12);
-    const ciphertext = combined.slice(12);
-    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+    if (combined.byteLength <= IV_BYTE_LENGTH) return null;
+    const iv = combined.slice(0, IV_BYTE_LENGTH);
+    const ciphertext = combined.slice(IV_BYTE_LENGTH);
+    const decrypted = await crypto.subtle.decrypt({ name: ALGO_AES_GCM, iv }, key, ciphertext);
     const decoder = new TextDecoder();
     return decoder.decode(new Uint8Array(decrypted));
   } catch (error) {
@@ -162,9 +176,9 @@ function fromBase64(base64: string): Uint8Array {
 async function encryptDataload(email: string, secret: string, payload: PartnersEnvSession): Promise<string> {
   const encoder = new TextEncoder();
   const key = await deriveEmailKey(email, secret);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const iv = crypto.getRandomValues(new Uint8Array(IV_BYTE_LENGTH));
   const plaintext = encoder.encode(JSON.stringify(payload));
-  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext);
+  const encrypted = await crypto.subtle.encrypt({ name: ALGO_AES_GCM, iv }, key, plaintext);
   const combined = new Uint8Array(iv.byteLength + encrypted.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.byteLength);
@@ -174,9 +188,9 @@ async function encryptDataload(email: string, secret: string, payload: PartnersE
 async function decryptDataload(email: string, secret: string, encryptedBase64: string): Promise<PartnersEnvSession> {
   const key = await deriveEmailKey(email, secret);
   const combined = fromBase64(encryptedBase64);
-  const iv = combined.slice(0, 12);
-  const ciphertext = combined.slice(12);
-  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  const iv = combined.slice(0, IV_BYTE_LENGTH);
+  const ciphertext = combined.slice(IV_BYTE_LENGTH);
+  const decrypted = await crypto.subtle.decrypt({ name: ALGO_AES_GCM, iv }, key, ciphertext);
   const decoder = new TextDecoder();
   return JSON.parse(decoder.decode(new Uint8Array(decrypted))) as PartnersEnvSession;
 }

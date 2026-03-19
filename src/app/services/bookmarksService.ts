@@ -2,18 +2,25 @@ import { generateEncryptedId } from '../../lib/utils.js';
 import type { Bookmark ,BookmarkInput } from '../models/Bookmark';
 import type { Env } from '../types/interface';
 
+const ALGO_SHA256 = 'SHA-256';
+const DEFAULT_SECRET_KEY = 'default-secret-key';
+const STORAGE_KEY_BOOKMARKS = 'BOOKMARKS_STORAGE';
+const EMPTY_STRING = '';
+
+const HASH_HEX_PAD_LENGTH = 2;
+
 async function encryptStorageKey(storageKey: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(storageKey + secret);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashBuffer = await crypto.subtle.digest(ALGO_SHA256, data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashArray.map(b => b.toString(16).padStart(HASH_HEX_PAD_LENGTH, '0')).join('');
 }
 
 export default function makeBookmarksService(env: Env) {
-  const STORAGE_KEY = "BOOKMARKS_STORAGE";
+  const STORAGE_KEY = STORAGE_KEY_BOOKMARKS;
   const kv = env.STORAGE_KV;
-  const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
+  const SECRET = env.DROGUIER_VAR_NAME || DEFAULT_SECRET_KEY;
 
   async function getEncryptedKey(): Promise<string> {
     return await encryptStorageKey(STORAGE_KEY, SECRET);
@@ -46,8 +53,8 @@ export default function makeBookmarksService(env: Env) {
       id,
       title: data.title.trim(),
       url: data.url.trim(),
-      icon: data.icon ? data.icon.trim() : '',
-      description: data.description ? data.description.trim() : '',
+      icon: data.icon ? data.icon.trim() : EMPTY_STRING,
+      description: data.description ? data.description.trim() : EMPTY_STRING,
       tags: data.tags || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -66,8 +73,8 @@ export default function makeBookmarksService(env: Env) {
       ...bookmarks[index],
       title: data.title.trim(),
       url: data.url.trim(),
-      icon: data.icon ? data.icon.trim() : bookmarks[index].icon || '',
-      description: data.description ? data.description.trim() : '',
+      icon: data.icon ? data.icon.trim() : bookmarks[index].icon || EMPTY_STRING,
+      description: data.description ? data.description.trim() : EMPTY_STRING,
       tags: data.tags || [],
       updatedAt: new Date().toISOString(),
     };
@@ -114,11 +121,11 @@ export default function makeBookmarksService(env: Env) {
 
     const bookmark = data as Partial<BookmarkInput>;
 
-    if (!bookmark.title || typeof bookmark.title !== 'string' || bookmark.title.trim() === '') {
+    if (!bookmark.title || typeof bookmark.title !== 'string' || bookmark.title.trim() === EMPTY_STRING) {
         errors.push('Title is required and must be a non-empty string');
     }
 
-    if (!bookmark.url || typeof bookmark.url !== 'string' || bookmark.url.trim() === '') {
+    if (!bookmark.url || typeof bookmark.url !== 'string' || bookmark.url.trim() === EMPTY_STRING) {
         errors.push('URL is required and must be a non-empty string');
     } else {
         try {
@@ -129,14 +136,14 @@ export default function makeBookmarksService(env: Env) {
     }
 
     // Validar duplicados solo si los campos básicos son válidos
-    if (bookmark.title && typeof bookmark.title === 'string' && bookmark.title.trim() !== '') {
+    if (bookmark.title && typeof bookmark.title === 'string' && bookmark.title.trim() !== EMPTY_STRING) {
       const titleExists = await checkDuplicateTitle(bookmark.title, excludeId);
       if (titleExists) {
         errors.push('A bookmark with this title already exists');
       }
     }
 
-    if (bookmark.url && typeof bookmark.url === 'string' && bookmark.url.trim() !== '') {
+    if (bookmark.url && typeof bookmark.url === 'string' && bookmark.url.trim() !== EMPTY_STRING) {
       try {
         new URL(bookmark.url);
         const urlExists = await checkDuplicateUrl(bookmark.url, excludeId);

@@ -9,6 +9,31 @@ import makeGoogleAuthLogRouter from './routes/googleAuthLog';
 import { jsonResponse } from './lib/utils.js';
 import makeUserSesionTknService from './app/services/userSesionTknService';
 
+const HEADER_API_TOKEN = 'X-API-Token';
+const HEADER_SESSION_TOKEN = 'X-Session-Token';
+const HEADER_CONTENT_TYPE = 'Content-Type';
+
+const HTTP_STATUS_UNAUTHORIZED = 401;
+const HTTP_STATUS_FORBIDDEN = 403;
+const HTTP_STATUS_NOT_FOUND = 404;
+const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
+
+const CORS_ALLOW_ORIGIN = '*';
+const CORS_ALLOW_METHODS = 'GET, POST, PUT, DELETE, OPTIONS';
+const CORS_ALLOW_HEADERS = `${HEADER_CONTENT_TYPE}, ${HEADER_API_TOKEN}, ${HEADER_SESSION_TOKEN}`;
+
+const DEFAULT_API_TOKEN = 'x-api-token-value';
+
+const ERR_UNAUTHORIZED = 'Unauthorized';
+const ERR_FORBIDDEN = 'Forbidden';
+const ERR_NOT_FOUND = 'Not found';
+const ERR_INTERNAL_SERVER = 'Internal server error';
+
+const MSG_API_TOKEN_REQUIRED = `API token is required.`;
+const MSG_INVALID_API_TOKEN = 'Invalid API token.';
+const MSG_SESSION_REQUIRED = `Session is required.`;
+const MSG_INVALID_SESSION_TOKEN = 'Invalid session token.';
+
 // Router to handle different routes (delegates to modules)
 async function handleRequest(request, env) {
   const url = new URL(request.url);
@@ -22,32 +47,31 @@ async function handleRequest(request, env) {
   if (method === 'OPTIONS') {
     return new Response(null, {
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, X-API-Token, X-Session-Token',
+        'Access-Control-Allow-Origin': CORS_ALLOW_ORIGIN,
+        'Access-Control-Allow-Methods': CORS_ALLOW_METHODS,
+        'Access-Control-Allow-Headers': CORS_ALLOW_HEADERS,
       },
     });
   }
 
   // Validate API Token (skip for GET on root endpoint)
-  const tokenApi = request.headers.get('X-API-Token');
-  const validTokenApi = env.API_TOKEN || 'x-api-token-value'; // Default token for testing
-  const SECRET = env.DROGUIER_VAR_NAME || 'default-secret-key';
+  const tokenApi = request.headers.get(HEADER_API_TOKEN);
+  const validTokenApi = env.API_TOKEN || DEFAULT_API_TOKEN;
   
   if (!tokenApi) {
     return jsonResponse({
       success: false,
-      error: 'Unauthorized',
-      message: 'API token is required. Please include X-API-Token header.',
-    }, 401);
+      error: ERR_UNAUTHORIZED,
+      message: MSG_API_TOKEN_REQUIRED,
+    }, HTTP_STATUS_UNAUTHORIZED);
   }
   
   if (validTokenApi !== tokenApi) {
     return jsonResponse({
       success: false,
-      error: 'Forbidden',
-      message: 'Invalid API token.',
-    }, 403);
+      error: ERR_FORBIDDEN,
+      message: MSG_INVALID_API_TOKEN,
+    }, HTTP_STATUS_FORBIDDEN);
   }
 
   // Root endpoint - API info
@@ -67,43 +91,50 @@ async function handleRequest(request, env) {
     || path.startsWith('/partners')
     || path.startsWith('/googleAuthLog')) {
   
-    const sessionToken = request.headers.get('X-Session-Token');    
+    const sessionToken = request.headers.get(HEADER_SESSION_TOKEN);    
 
     if (!sessionToken) {
       return jsonResponse({
         success: false,
-        error: 'Unauthorized',
-        message: 'Session is required. Include X-Session-Token header.',
-      }, 401);
+        error: ERR_UNAUTHORIZED,
+        message: MSG_SESSION_REQUIRED,
+      }, HTTP_STATUS_UNAUTHORIZED);
     }
     
     const sessionEmail = await userSesionTknService.getEmail(sessionToken);
     if (!sessionEmail) {
       return jsonResponse({
         success: false,
-        error: 'Forbidden',
-        message: 'Invalid session token.',
-      }, 401);
+        error: ERR_FORBIDDEN,
+        message: MSG_INVALID_SESSION_TOKEN,
+      }, HTTP_STATUS_FORBIDDEN);
     }
+
     const expectedToken = await userSesionTknService.getToken(sessionEmail);
     if (sessionToken !== expectedToken || !expectedToken) {
       return jsonResponse({
         success: false,
-        error: 'Forbidden',
-        message: 'Invalid session token.',
-      }, 403);
+        error: ERR_FORBIDDEN,
+        message: MSG_INVALID_SESSION_TOKEN,
+      }, HTTP_STATUS_FORBIDDEN);
     }
 
-    /***
-    const session = await sessionService.getSession(sessionEmail);
-    if (!session) {
+    const session = await userSesionTknService.getSessionByToken(sessionToken);
+    if (!session ) {
       return jsonResponse({
         success: false,
-        error: 'Forbidden',
-        message: 'Session not found or expired.',
-      }, 403);
+        error: ERR_FORBIDDEN,
+        message: MSG_INVALID_SESSION_TOKEN,
+      }, HTTP_STATUS_FORBIDDEN);
     } 
-    */
+
+    if (session.expiration_date < Date.now()) {
+      return jsonResponse({
+        success: false,
+        error: ERR_FORBIDDEN,
+        message: MSG_INVALID_SESSION_TOKEN,
+      }, HTTP_STATUS_FORBIDDEN);      
+    }
   }
 
   // Mount bookmarks router
@@ -145,9 +176,9 @@ async function handleRequest(request, env) {
   // 404 - Route not found
   return jsonResponse({
     success: false,
-    error: 'Not found',
+    error: ERR_NOT_FOUND,
     message: `Route ${method} ${path} not found`,
-  }, 404);
+  }, HTTP_STATUS_NOT_FOUND);
 }
 
 // Main export for Cloudflare Workers
@@ -158,9 +189,9 @@ export default {
     } catch (error) {
       return jsonResponse({
         success: false,
-        error: 'Internal server error',
+        error: ERR_INTERNAL_SERVER,
         message: error.message,
-      }, 500);
+      }, HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
   },
 };

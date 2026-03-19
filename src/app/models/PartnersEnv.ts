@@ -23,6 +23,7 @@ export interface PartnersEnvInput {
 }
 
 export interface PartnersEnvSession extends Omit<PartnersEnv, 'id' | 'key' | 'created_at'> {
+  refresh_expiration_date: number; // ISO 8601 format
   expiration_date: number; // ISO 8601 format
   last_login?: string; // ISO 8601 format
 }
