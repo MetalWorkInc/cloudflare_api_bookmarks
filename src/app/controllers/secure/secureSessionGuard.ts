@@ -22,7 +22,6 @@ interface UserSesionService {
 export default function makeSecureSessionGuard(userSesionService: UserSesionService) {
   return async function validateSecureSession(req: Request): Promise<Response | null> {
     const sessionToken = req.headers.get(HEADER_SESSION_TOKEN);
-
     if (!sessionToken) {
       return jsonResponse(
         {

@@ -52,6 +52,8 @@ const MINUTES_PER_HOUR = 60;
 const SECONDS_PER_MINUTE = 60;
 const MILLIS_PER_SECOND = 1000;
 const REFRESH_EXPIRATION_DAYS = 7;
+const EXPIRE_SESSION_SECONDS = HOURS_PER_SESSION * MINUTES_PER_HOUR * SECONDS_PER_MINUTE;  
+const EXPIRE_SESSION_REFRESH_SECONDS = REFRESH_EXPIRATION_DAYS * HOURS_PER_SESSION * MINUTES_PER_HOUR * SECONDS_PER_MINUTE;
 
 
 /****************************************************************************************
@@ -110,7 +112,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
 
         if (hasValidRefreshExpiration) {
           const token = await userSesionService.getToken(sessionEmail);
-          existingSession.expiration_date = Date.now() + HOURS_PER_SESSION * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLIS_PER_SECOND;
+          existingSession.expiration_date = Date.now() + EXPIRE_SESSION_SECONDS * MILLIS_PER_SECOND;
           const response: SesionEnv = {
             success: true,
             token,
@@ -253,16 +255,11 @@ export default function makeUserSesionController( userSesionService: UserSesionS
       try {
         var sessionToken = req.headers.get(HEADER_SESSION_TOKEN) || EMPTY_STRING;    
         sessionEmail = await userSesionService.getEmail(sessionToken);
-
         let email = EMPTY_STRING;
         let pass = EMPTY_STRING;
         if (body) {
           email = body.email || EMPTY_STRING;
           pass = body.pass || EMPTY_STRING;
-        } else {
-          var emailRq = await req.json() as { email?: string; pass?: string };
-          email = emailRq.email || EMPTY_STRING;
-          pass = emailRq.pass || EMPTY_STRING;
         }
 
         email = email.trim();
@@ -279,7 +276,6 @@ export default function makeUserSesionController( userSesionService: UserSesionS
 
           const normalizedEmail = String(email ?? '').trim().toLowerCase();
           const decryptedPass = decryptSesionData(pass, `${API_TOKEN}:${normalizedEmail}`)
-          console.log('Decrypted password:', decryptedPass);
           const partners = await partnersEnvService.getByFilter({
             email,
             full_name: EMPTY_STRING,
@@ -298,6 +294,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
           return null;
         }      
       } catch (err) {
+        console.error('Error in validar_request:', err);
         sessionEmail = null;
       }
       return sessionEmail;
@@ -417,8 +414,8 @@ export function createPartnerEnvSesion(partner: PartnersEnv): PartnersEnvSession
     updated_at: partner.updated_at,
     active: partner.active,
     bookmarks_favorites: partner.bookmarks_favorites,
-    refresh_expiration_date: Date.now() + REFRESH_EXPIRATION_DAYS * HOURS_PER_SESSION * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLIS_PER_SECOND,
-    expiration_date: Date.now() + HOURS_PER_SESSION * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLIS_PER_SECOND,
+    refresh_expiration_date: Date.now() + EXPIRE_SESSION_REFRESH_SECONDS * MILLIS_PER_SECOND,
+    expiration_date: Date.now() + EXPIRE_SESSION_SECONDS * MILLIS_PER_SECOND,
     last_login: new Date().toISOString(),
   };
 }

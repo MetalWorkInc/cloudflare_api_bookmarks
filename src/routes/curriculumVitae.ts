@@ -13,10 +13,10 @@ export default function makeCurriculumVitaeRouter(env: Env) {
 
     if (path === '/curriculum/personalcard' && method === 'GET') return controller.getPersonalCards(request, env);
     if (path === '/curriculum' && method === 'GET') return controller.list(request, env);
-    if (path === '/curriculum' && method === 'POST') return controller.create(request, env);
+    //if (path === '/curriculum' && method === 'POST') return controller.create(request, env);
     if (id && method === 'GET') return controller.get(request, env, id);
-    if (id && method === 'PUT') return controller.update(request, env, id);
-    if (id && method === 'DELETE') return controller.remove(request, env, id);
+    //if (id && method === 'PUT') return controller.update(request, env, id);
+    //if (id && method === 'DELETE') return controller.remove(request, env, id);
 
     return null; // not handled
   };
