@@ -6,6 +6,7 @@ import makeCurriculumVitaeRouter from './routes/curriculumVitae';
 import makePartnersEnvRouter from './routes/partnersEnv';
 import makeUserSesionRouter from './routes/userSesion';
 import makeGoogleAuthLogRouter from './routes/googleAuthLog';
+import makeCalendarsRouter from './routes/calendars';
 import { jsonResponse } from './lib/utils.js';
 import makeUserSesionTknService from './app/services/userSesionTknService';
 
@@ -89,7 +90,8 @@ async function handleRequest(request, env) {
   // Session validation for protected routes
   if (path.startsWith('/bookmarks') 
     || path.startsWith('/partners')
-    || path.startsWith('/googleAuthLog')) {
+    || path.startsWith('/googleAuthLog')
+    || path.startsWith('/calendars')) {
   
     const sessionToken = request.headers.get(HEADER_SESSION_TOKEN);    
 
@@ -169,6 +171,13 @@ async function handleRequest(request, env) {
   // Mount google auth log router
   if (path.startsWith('/googleAuthLog')) {
     const router = makeGoogleAuthLogRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
+  }
+
+  // Mount calendars router
+  if (path.startsWith('/calendars')) {
+    const router = makeCalendarsRouter(env);
     const res = await router(request, path, method);
     if (res) return res;
   }
