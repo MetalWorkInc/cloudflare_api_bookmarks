@@ -123,6 +123,46 @@ Ejecuta los tests incluidos para verificar que todo funciona correctamente:
 npm test
 ```
 
+## D1 Contable: flujo Local -> Produccion
+
+Para validar primero en local y luego reproducir en produccion, usa los scripts SQL numerados dentro de [datastorages/contable/01_schema.sql](datastorages/contable/01_schema.sql), [datastorages/contable/02_seed_base_config.sql](datastorages/contable/02_seed_base_config.sql), [datastorages/contable/03_views.sql](datastorages/contable/03_views.sql) y [datastorages/contable/04_generar_asientos.sql](datastorages/contable/04_generar_asientos.sql).
+
+1. Ejecutar todo en local:
+
+```bash
+npm run d1:contable:local:all
+```
+
+2. Validar estructura local (tablas y vistas):
+
+```bash
+npm run d1:contable:local:tables
+npm run d1:contable:local:views
+```
+
+3. Validar datos contables locales (ejemplo):
+
+```bash
+npx wrangler d1 execute datastoraged01 --local --command="SELECT COUNT(*) AS total_asientos FROM cont_asientos;"
+npx wrangler d1 execute datastoraged01 --local --command="SELECT COUNT(*) AS total_detalles FROM cont_asientos_detalle;"
+```
+
+4. Cuando la validacion local este OK, reproducir en produccion:
+
+```bash
+npm run d1:contable:remote:all
+```
+
+5. Validar en produccion (consulta de control):
+
+```bash
+npx wrangler d1 execute datastoraged01 --remote --command="SELECT COUNT(*) AS total_asientos FROM cont_asientos;"
+```
+
+Notas:
+- El script [datastorages/contable/01_schema.sql](datastorages/contable/01_schema.sql) hace DROP TABLE IF EXISTS para re-ejecucion segura, por lo que reinicia ese dominio de tablas.
+- Ejecuta siempre en orden numerado para mantener dependencias y relaciones.
+
 ## Siguientes Pasos
 
 1. **Personaliza el dominio**: En el dashboard de Cloudflare, puedes configurar un dominio personalizado para tu Worker

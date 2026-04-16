@@ -7,8 +7,9 @@ import makePartnersEnvRouter from './routes/partnersEnv';
 import makeUserSesionRouter from './routes/userSesion';
 import makeGoogleAuthLogRouter from './routes/googleAuthLog';
 import makeCalendarsRouter from './routes/calendars';
-import { jsonResponse } from './lib/utils.js';
+import makeContableRouter from './routes/contable';
 import makeUserSesionTknService from './app/services/userSesionTknService';
+import { jsonResponse } from './lib/utils.js';
 
 const HEADER_API_TOKEN = 'X-API-Token';
 const HEADER_SESSION_TOKEN = 'X-Session-Token';
@@ -91,7 +92,8 @@ async function handleRequest(request, env) {
   if (path.startsWith('/bookmarks') 
     || path.startsWith('/partners')
     || path.startsWith('/googleAuthLog')
-    || path.startsWith('/calendars')) {
+    || path.startsWith('/calendars')
+    || path.startsWith('/contable')) {
   
     const sessionToken = request.headers.get(HEADER_SESSION_TOKEN);    
 
@@ -178,6 +180,13 @@ async function handleRequest(request, env) {
   // Mount calendars router
   if (path.startsWith('/calendars')) {
     const router = makeCalendarsRouter(env);
+    const res = await router(request, path, method);
+    if (res) return res;
+  }
+
+  // Mount contable router
+  if (path.startsWith('/contable')) {
+    const router = makeContableRouter(env);
     const res = await router(request, path, method);
     if (res) return res;
   }

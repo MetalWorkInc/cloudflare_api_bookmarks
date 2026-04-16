@@ -46,6 +46,7 @@ const MSG_SESSION_HAS_EXPIRED = 'Session has expired';
 const MSG_SESSION_IS_VALID = 'Session is valid';
 const MSG_FAILED_REGISTER_USER_SESSION = 'Failed to register user session';
 const MSG_USER_REGISTERED_AND_SESSION_CREATED = 'Usuario registrado y sesión creada';
+const MSG_INVALID_ENCRYPTED_DATA = 'Invalid encrypted data';
 
 const HOURS_PER_SESSION = 24;
 const MINUTES_PER_HOUR = 60;
@@ -82,7 +83,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
           success: false,
           token: EMPTY_STRING,
           data: EMPTY_STRING,
-          message: `Failed to register user session: ${error.message}`,
+          message: `Failed to register user session [${error.name}]: ${error.message}`,
         };
         return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
       }
@@ -135,7 +136,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
           success: false,
           token: EMPTY_STRING,
           data: EMPTY_STRING,
-          message: `Failed to validate session: ${error.message}`,
+          message: `Failed to validate session [${error.name}]: ${error.message}`,
         };
         return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
       }
@@ -180,7 +181,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
           success: false,
           token: EMPTY_STRING,
           data: EMPTY_STRING,
-          message: `Failed to register user session: ${error.message}`,
+          message: `Failed to register user session [${error.name}]: ${error.message}`,
         };
         console.error('Error in validar_google_auth:', error);
         return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
@@ -241,7 +242,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
           success: false,
           token: EMPTY_STRING,
           data: EMPTY_STRING,
-          message: `Failed to validate session: ${error.message}`,
+          message: `Failed to validate session [${error.name}]: ${error.message}`,
         };
         return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
       }
@@ -294,7 +295,8 @@ export default function makeUserSesionController( userSesionService: UserSesionS
           return null;
         }      
       } catch (err) {
-        console.error('Error in validar_request:', err);
+        const error = err as Error;
+        console.error(`Error in validar_request [${error.name}]:`, error.message);
         sessionEmail = null;
       }
       return sessionEmail;
@@ -344,7 +346,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
           success: false,
           token: EMPTY_STRING,
           data: EMPTY_STRING,
-          message: `Failed to register user session: ${error.message}`,
+          message: `Failed to register user session [${error.name}]: ${error.message}`,
         };
         return buildSesionResponse(response, HTTP_STATUS_INTERNAL_SERVER_ERROR);
       }
@@ -391,19 +393,43 @@ function encryptSesionData(serializedData: string, token: string): string {
   return btoa(binary);
 }
 
+function isValidBase64(value: string): boolean {
+  const normalized = value.trim();
+  if (!normalized || normalized.length % 4 !== 0) {
+    return false;
+  }
+
+  return /^[A-Za-z0-9+/]+={0,2}$/.test(normalized);
+}
+
 function decryptSesionData(encryptedData: string, token: string): string {
   if (!token) return encryptedData;
-  const binary = atob(encryptedData);
-  const dataBytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    dataBytes[i] = binary.charCodeAt(i);
+  const normalized = encryptedData.trim();
+
+  if (!isValidBase64(normalized)) {
+    const error = new TypeError(MSG_INVALID_ENCRYPTED_DATA);
+    error.name = 'InvalidEncryptedDataError';
+    throw error;
   }
-  const tokenBytes = new TextEncoder().encode(token);
-  const output = new Uint8Array(dataBytes.length);
-  for (let i = 0; i < dataBytes.length; i += 1) {
-    output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
+
+  try {
+    const binary = atob(normalized);
+    const dataBytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      dataBytes[i] = binary.charCodeAt(i);
+    }
+    const tokenBytes = new TextEncoder().encode(token);
+    const output = new Uint8Array(dataBytes.length);
+    for (let i = 0; i < dataBytes.length; i += 1) {
+      output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
+    }
+    return new TextDecoder().decode(output);
+  } catch (err) {
+    const error = err as Error;
+    const decryptError = new TypeError(`${MSG_INVALID_ENCRYPTED_DATA}: ${error.message}`);
+    decryptError.name = error.name || 'InvalidEncryptedDataError';
+    throw decryptError;
   }
-  return new TextDecoder().decode(output);
 }
 
 export function createPartnerEnvSesion(partner: PartnersEnv): PartnersEnvSession {
