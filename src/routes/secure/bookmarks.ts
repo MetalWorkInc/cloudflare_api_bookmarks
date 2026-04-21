@@ -1,7 +1,7 @@
-import makeBookmarksService from '../app/services/bookmarksService';
-import makeUserSesionTknService from '../app/services/userSesionTknService';
-import makeBookmarksController from '../app/controllers/secure/bookmarksController';
-import type { Env } from '../app/types/interface';
+import makeBookmarksService from '../../app/services/bookmarksService';
+import makeUserSesionTknService from '../../app/services/userSesionTknService';
+import makeBookmarksController from '../../app/controllers/secure/bookmarksController';
+import type { Env } from '../../app/types/interface';
 
 export default function makeBookmarksRouter(env: Env) {
   const service = makeBookmarksService(env);

@@ -1,6 +1,6 @@
-import makeCurriculumService from '../app/services/curriculumService';
-import makeCurriculumVitaeController from '../app/controllers/public/curriculumVitaeController';
-import type { Env } from '../app/types/interface.js';
+import makeCurriculumService from '../../app/services/curriculumService';
+import makeCurriculumVitaeController from '../../app/controllers/public/curriculumVitaeController';
+import type { Env } from '../../app/types/interface.js';
 
 export default function makeCurriculumVitaeRouter(env: Env) {
   const service = makeCurriculumService(env);

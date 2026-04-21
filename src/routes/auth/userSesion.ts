@@ -1,8 +1,8 @@
-import makeUserSesionTknService from '../app/services/userSesionTknService';
-import makePartnersEnvService from '../app/services/partnersEnvService';
-import makeGoogleAuthLogService from '../app/services/googleAuthLogService';
-import makeUserSesionController from '../app/controllers/auth/userSesionController';
-import type { Env } from '../app/types/interface.js';
+import makeUserSesionTknService from '../../app/services/userSesionTknService';
+import makePartnersEnvService from '../../app/services/partnersEnvService';
+import makeGoogleAuthLogService from '../../app/services/googleAuthLogService';
+import makeUserSesionController from '../../app/controllers/auth/userSesionController';
+import type { Env } from '../../app/types/interface.js';
 
 export default function makeUserSesionRouter(env: Env) {
   const userSesionService = makeUserSesionTknService(env);

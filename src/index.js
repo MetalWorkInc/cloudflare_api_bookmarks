@@ -1,13 +1,15 @@
 /**
  * Entry point for Cloudflare Worker - delegates to resource routers
  */
-import makeBookmarksRouter from './routes/bookmarks';
-import makeCurriculumVitaeRouter from './routes/curriculumVitae';
-import makePartnersEnvRouter from './routes/partnersEnv';
-import makeUserSesionRouter from './routes/userSesion';
-import makeGoogleAuthLogRouter from './routes/googleAuthLog';
-import makeCalendarsRouter from './routes/calendars';
-import makeContableRouter from './routes/contable';
+import {
+  makeBookmarksRouter,
+  makeCalendarsRouter,
+  makeContableRouter,
+  makeCurriculumVitaeRouter,
+  makeGoogleAuthLogRouter,
+  makePartnersEnvRouter,
+  makeUserSesionRouter,
+} from './routes';
 import makeUserSesionTknService from './app/services/userSesionTknService';
 import { jsonResponse } from './lib/utils.js';
 

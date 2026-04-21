@@ -1,5 +1,5 @@
-import type { Env } from '../app/types/interface.js';
-import makeUserSesionTknService from '../app/services/userSesionTknService';
+import type { Env } from '../../app/types/interface.js';
+import makeUserSesionTknService from '../../app/services/userSesionTknService';
 import {
   makeCalendarsService,
   makeCalendarEventsService,
@@ -7,8 +7,8 @@ import {
   makeEventChangeRequestsService,
   makePaymentsService,
   makeEventPaymentsService,
-} from '../app/services/calendars/index.js';
-import makeCalendarsController from '../app/controllers/secure/calendarsController';
+} from '../../app/services/calendars/index.js';
+import makeCalendarsController from '../../app/controllers/secure/calendarsController';
 
 export default function makeCalendarsRouter(env: Env) {
   const calendarsService = makeCalendarsService(env);

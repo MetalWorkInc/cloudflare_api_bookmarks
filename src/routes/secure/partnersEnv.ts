@@ -1,7 +1,7 @@
-import makePartnersEnvService from '../app/services/partnersEnvService';
-import makeUserSesionTknService from '../app/services/userSesionTknService';
-import makePartnersEnvController from '../app/controllers/secure/partnersEnvController';
-import type { Env } from '../app/types/interface.js';
+import makePartnersEnvService from '../../app/services/partnersEnvService';
+import makeUserSesionTknService from '../../app/services/userSesionTknService';
+import makePartnersEnvController from '../../app/controllers/secure/partnersEnvController';
+import type { Env } from '../../app/types/interface.js';
 
 export default function makePartnersEnvRouter(env: Env) {
   const service = makePartnersEnvService(env);

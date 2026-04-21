@@ -1,11 +1,11 @@
-import makeContaReportController from '../app/controllers/secure/contable/ContaReportController';
+import makeContaReportController from '../../../app/controllers/secure/contable/ContaReportController';
 import type {
   ContaReportResource,
   ContaTableResource,
-} from '../app/models/contable/ContaReport.js';
-import makeContaReportService from '../app/services/contable/contaReportService';
-import makeUserSesionTknService from '../app/services/userSesionTknService';
-import type { Env } from '../app/types/interface.js';
+} from '../../../app/models/contable/ContaReport.js';
+import makeContaReportService from '../../../app/services/contable/contaReportService';
+import makeUserSesionTknService from '../../../app/services/userSesionTknService';
+import type { Env } from '../../../app/types/interface.js';
 
 const TABLE_RESOURCES = new Set<ContaTableResource>([
   'param-cuentas',
