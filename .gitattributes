@@ -1,0 +1,4 @@
+# wrangler.toml is a public template with generic values only.
+# Use wrangler.local.toml for real values (gitignored).
+# The merge=ours strategy prevents overwriting this file during merges.
+wrangler.toml merge=ours

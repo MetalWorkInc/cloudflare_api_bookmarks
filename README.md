@@ -121,6 +121,16 @@ Devuelve información básica de contacto: nombre, email, teléfono.
 npm install
 ```
 
+2. **Activar git hooks de protección** (una vez por clonado):
+```bash
+git config core.hooksPath .githooks
+```
+
+> Esto activa el hook `pre-commit` que impide commitear cambios accidentales a `wrangler.toml`.  
+> Usa `wrangler.local.toml` (ignorado por git) para tus valores reales de IDs y credenciales.
+
+
+
 2. **Ejecutar en modo desarrollo:**
 ```bash
 npm run dev
