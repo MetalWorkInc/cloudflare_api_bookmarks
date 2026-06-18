@@ -141,5 +141,6 @@ vite.config.ts.timestamp-*
 # Wrangler / Cloudflare Workers
 .wrangler/
 .dev.vars
+wrangler.local.toml
 dist/
 worker/
