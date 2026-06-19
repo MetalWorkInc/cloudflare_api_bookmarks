@@ -1,0 +1,20 @@
+#!/bin/sh
+# pre-commit hook: protects wrangler.toml from accidental commits.
+# Only generic/template values are allowed in this file.
+
+PROTECTED_FILE="wrangler.toml"
+
+if git diff --cached --name-only | grep -q "^${PROTECTED_FILE}$"; then
+  echo ""
+  echo "❌  ERROR: Intento de modificar '${PROTECTED_FILE}' detectado."
+  echo ""
+  echo "   Este archivo es una plantilla pública con datos genéricos."
+  echo "   Usa 'wrangler.local.toml' (ignorado por git) para valores reales."
+  echo ""
+  echo "   Para omitir esta protección en casos excepcionales, ejecuta:"
+  echo "   git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+exit 0
