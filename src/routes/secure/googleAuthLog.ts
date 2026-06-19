@@ -1,7 +1,7 @@
-import makeGoogleAuthLogService from '../../app/services/googleAuthLogService';
+import makeGoogleAuthLogService from '../../app/services/secure/googleAuthLogService';
 import makeGoogleAuthLogController from '../../app/controllers/secure/googleAuthLogController';
 import type { Env } from '../../app/types/interface.js';
-import makeUserSesionTknService from '../../app/services/userSesionTknService';
+import makeUserSesionTknService from '../../app/services/auth/userSesionTknService';
 
 export default function makeGoogleAuthLogRouter(env: Env) {
   const service = makeGoogleAuthLogService(env);

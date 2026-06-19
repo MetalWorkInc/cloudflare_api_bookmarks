@@ -1,6 +1,6 @@
-import { generateId } from '../../../lib/utils.js';
-import type { Env } from '../../types/interface.js';
-import type { EventChangeRequest, EventChangeRequestInput } from '../../models/calendars/EventChangeRequest.js';
+import { generateId } from '../../../../lib/utils.js';
+import type { Env } from '../../../types/interface.js';
+import type { EventChangeRequest, EventChangeRequestInput } from '../../../models/calendars/EventChangeRequest.js';
 
 const EMPTY_STRING = '';
 

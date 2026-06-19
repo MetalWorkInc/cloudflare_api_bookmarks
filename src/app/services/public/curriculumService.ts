@@ -1,6 +1,6 @@
-import { generateId } from '../../lib/utils.js';
-import { CurriculumVitae, CurriculumVitaeInput } from '../models/CurriculumVitae.js';
-import type { Env } from '../types/interface.js';
+import { generateId } from '../../../lib/utils.js';
+import { CurriculumVitae, CurriculumVitaeInput } from '../../models/CurriculumVitae.js';
+import type { Env } from '../../types/interface.js';
 
 interface CurriculumVitaeRow {
   id: string;

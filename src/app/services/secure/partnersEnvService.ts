@@ -1,6 +1,6 @@
-import { generateId } from '../../lib/utils.js';
-import { PartnersEnv, PartnersEnvInput } from '../models/PartnersEnv.js';
-import type { Env } from '../types/interface.js';
+import { generateId } from '../../../lib/utils.js';
+import { PartnersEnv, PartnersEnvInput } from '../../models/PartnersEnv.js';
+import type { Env } from '../../types/interface.js';
 
 const ALGO_SHA256 = 'SHA-256';
 const DEFAULT_SECRET_KEY = 'default-secret-key';

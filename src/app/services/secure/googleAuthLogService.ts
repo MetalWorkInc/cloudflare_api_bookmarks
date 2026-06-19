@@ -1,6 +1,6 @@
-import { generateId } from '../../lib/utils.js';
-import { GoogleAuthLogPaginatedResult, type GoogleAuthLog, type GoogleAuthLogInput } from '../models/GoogleAuthLog';
-import type { Env } from '../types/interface';
+import { generateId } from '../../../lib/utils.js';
+import { GoogleAuthLogPaginatedResult, type GoogleAuthLog, type GoogleAuthLogInput } from '../../models/GoogleAuthLog';
+import type { Env } from '../../types/interface';
 
 export default function makeGoogleAuthLogService(env: Env) {
   const db = env.datastoraged01;

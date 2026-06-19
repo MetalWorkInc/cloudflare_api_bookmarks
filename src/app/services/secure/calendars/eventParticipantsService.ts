@@ -1,6 +1,6 @@
-import { generateId } from '../../../lib/utils.js';
-import type { Env } from '../../types/interface.js';
-import type { EventParticipant, EventParticipantInput } from '../../models/calendars/EventParticipant.js';
+import { generateId } from '../../../../lib/utils.js';
+import type { Env } from '../../../types/interface.js';
+import type { EventParticipant, EventParticipantInput } from '../../../models/calendars/EventParticipant.js';
 
 const EMPTY_STRING = '';
 

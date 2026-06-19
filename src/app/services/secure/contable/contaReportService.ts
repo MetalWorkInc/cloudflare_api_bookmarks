@@ -1,10 +1,10 @@
-import type { Env } from '../../types/interface.js';
+import type { Env } from '../../../types/interface.js';
 import type {
   ContaReportResource,
   ContaReportRow,
   ContaTableResource,
   ContaTableRow,
-} from '../../models/contable/ContaReport.js';
+} from '../../../models/contable/ContaReport.js';
 
 type TableConfig = {
   table: string;

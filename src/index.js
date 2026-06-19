@@ -10,7 +10,7 @@ import {
   makePartnersEnvRouter,
   makeUserSesionRouter,
 } from './routes';
-import makeUserSesionTknService from './app/services/userSesionTknService';
+import makeUserSesionTknService from './app/services/auth/userSesionTknService';
 import { jsonResponse } from './lib/utils.js';
 
 const HEADER_API_TOKEN = 'X-API-Token';

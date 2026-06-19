@@ -1,5 +1,5 @@
-import type { Env } from '../types/interface.js';
-import type { PartnersEnvSession } from '../models/PartnersEnv.js';
+import type { Env } from '../../types/interface.js';
+import type { PartnersEnvSession } from '../../models/PartnersEnv.js';
 
 const ALGO_PBKDF2 = 'PBKDF2' as const;
 const ALGO_SHA256 = 'SHA-256' as const;

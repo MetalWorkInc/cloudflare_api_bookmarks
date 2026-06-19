@@ -3,8 +3,8 @@ import type {
   ContaReportResource,
   ContaTableResource,
 } from '../../../app/models/contable/ContaReport.js';
-import makeContaReportService from '../../../app/services/contable/contaReportService';
-import makeUserSesionTknService from '../../../app/services/userSesionTknService';
+import makeContaReportService from '../../../app/services/secure/contable/contaReportService';
+import makeUserSesionTknService from '../../../app/services/auth/userSesionTknService';
 import type { Env } from '../../../app/types/interface.js';
 
 const TABLE_RESOURCES = new Set<ContaTableResource>([

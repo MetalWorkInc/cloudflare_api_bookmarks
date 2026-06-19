@@ -1,6 +1,6 @@
-import { generateEncryptedId } from '../../lib/utils.js';
-import type { Bookmark ,BookmarkInput } from '../models/Bookmark';
-import type { Env } from '../types/interface';
+import { generateEncryptedId } from '../../../lib/utils.js';
+import type { Bookmark ,BookmarkInput } from '../../models/Bookmark';
+import type { Env } from '../../types/interface';
 
 const ALGO_SHA256 = 'SHA-256';
 const DEFAULT_SECRET_KEY = 'default-secret-key';

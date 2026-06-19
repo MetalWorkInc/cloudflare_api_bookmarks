@@ -1,4 +1,4 @@
-import makeCurriculumService from '../../app/services/curriculumService';
+import makeCurriculumService from '../../app/services/public/curriculumService';
 import makeCurriculumVitaeController from '../../app/controllers/public/curriculumVitaeController';
 import type { Env } from '../../app/types/interface.js';
 

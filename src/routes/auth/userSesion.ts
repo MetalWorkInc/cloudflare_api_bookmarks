@@ -1,6 +1,6 @@
-import makeUserSesionTknService from '../../app/services/userSesionTknService';
-import makePartnersEnvService from '../../app/services/partnersEnvService';
-import makeGoogleAuthLogService from '../../app/services/googleAuthLogService';
+import makeUserSesionTknService from '../../app/services/auth/userSesionTknService';
+import makePartnersEnvService from '../../app/services/secure/partnersEnvService';
+import makeGoogleAuthLogService from '../../app/services/secure/googleAuthLogService';
 import makeUserSesionController from '../../app/controllers/auth/userSesionController';
 import type { Env } from '../../app/types/interface.js';
 

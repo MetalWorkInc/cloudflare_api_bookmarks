@@ -1,5 +1,5 @@
-import makePartnersEnvService from '../../app/services/partnersEnvService';
-import makeUserSesionTknService from '../../app/services/userSesionTknService';
+import makePartnersEnvService from '../../app/services/secure/partnersEnvService';
+import makeUserSesionTknService from '../../app/services/auth/userSesionTknService';
 import makePartnersEnvController from '../../app/controllers/secure/partnersEnvController';
 import type { Env } from '../../app/types/interface.js';
 

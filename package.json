@@ -1,7 +1,7 @@
 {
-  "name": "cloudflare-api-bookmarks",
+  "name": "cloudflare-api-data",
   "version": "1.0.0",
-  "description": "Simple API for bookmarks data using Cloudflare Workers",
+  "description": "Simple API for data using Cloudflare Workers",
   "main": "src/index.js",
   "scripts": {
     "dev": "wrangler dev",
@@ -12,6 +12,7 @@
     "cloudflare",
     "workers",
     "api",
+    "data",
     "bookmarks"
   ],
   "author": "",
