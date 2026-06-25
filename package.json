@@ -7,6 +7,7 @@
     "dev": "if exist wrangler.local.toml (wrangler dev --config wrangler.local.toml) else (wrangler dev)",
     "dev:cf": "wrangler dev",
     "deploy": "wrangler deploy",
+    "build:ci": "node scripts/generate-wrangler.js",
     "deploy:ci": "node scripts/generate-wrangler.js && wrangler deploy --config wrangler.generated.toml",
     "test": "node test/api-test.js"
   },
