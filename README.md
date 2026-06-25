@@ -153,7 +153,7 @@ Configura las variables de entorno en `.dev.vars` (desarrollo) o en el dashboard
 
 ```
 API_TOKEN=your-secret-token-here
-DROGUIER_VAR_NAME=your-encryption-key
+API_VAR=your-encryption-key
 ```
 
 ## 📄 Licencia

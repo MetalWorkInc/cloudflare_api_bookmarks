@@ -11,7 +11,7 @@ export interface ApiResponse<T> {
 
 export interface Env {
   API_TOKEN: string;
-  DROGUIER_VAR_NAME: string;
+  WORKER_VAR_X: string;
   STORAGE_KV: KVNamespace;
   datastoraged01: D1Database;
 }

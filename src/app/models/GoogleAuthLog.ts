@@ -1,4 +1,4 @@
-import { PaginationDto } from '../types/PaginationDto';
+import { PaginationDto } from '../types/pagination';
 
 export interface GoogleAuthLog {
 	id: string;

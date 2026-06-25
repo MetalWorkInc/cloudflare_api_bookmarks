@@ -17,7 +17,7 @@ const SESSION_TTL_SECONDS = 86400;
 
 export default function makeUserSesionTknService(env: Env) {
   const kv = env.STORAGE_KV;
-  const SECRET = env.DROGUIER_VAR_NAME || DEFAULT_SECRET_KEY;
+  const SECRET = env.WORKER_VAR_X || DEFAULT_SECRET_KEY;
   const API_TOKEN = env.API_TOKEN || DEFAULT_API_TOKEN;
 
   async function getToken(email: string): Promise<string> {

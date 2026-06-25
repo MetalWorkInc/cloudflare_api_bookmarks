@@ -20,7 +20,7 @@ async function encryptStorageKey(storageKey: string, secret: string): Promise<st
 export default function makeBookmarksService(env: Env) {
   const STORAGE_KEY = STORAGE_KEY_BOOKMARKS;
   const kv = env.STORAGE_KV;
-  const SECRET = env.DROGUIER_VAR_NAME || DEFAULT_SECRET_KEY;
+  const SECRET = env.WORKER_VAR_X || DEFAULT_SECRET_KEY;
 
   async function getEncryptedKey(): Promise<string> {
     return await encryptStorageKey(STORAGE_KEY, SECRET);

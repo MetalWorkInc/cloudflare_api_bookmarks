@@ -23,7 +23,7 @@ async function encryptKey(key: string, secret: string): Promise<string> {
 
 export default function makePartnersEnvService(env: Env) {
   const db = env.datastoraged01;
-  const SECRET = env.DROGUIER_VAR_NAME || DEFAULT_SECRET_KEY;
+  const SECRET = env.WORKER_VAR_X || DEFAULT_SECRET_KEY;
 
   async function list(): Promise<PartnersEnv[]> {
     const { results } = await db.prepare(

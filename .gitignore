@@ -142,6 +142,7 @@ vite.config.ts.timestamp-*
 .wrangler/
 .dev.vars
 wrangler.toml
+!wrangler.base.toml
 wrangler.local.toml
 dist/
 worker/
