@@ -49,15 +49,23 @@ Los comandos anteriores te darán IDs como estos:
 { binding = "STORAGE_KV", preview_id = "xyz789..." }
 ```
 
-### 5. Actualizar wrangler.toml
+### 5. Elegir el archivo de entorno
 
-Edita el archivo `wrangler.toml` y reemplaza los IDs de ejemplo con los IDs reales que obtuviste:
+Para este repositorio hay tres archivos relevantes:
+
+- `wrangler.toml`: archivo que Cloudflare Build usa en el deploy automático.
+- `wrangler.base.toml`: plantilla pública de referencia.
+- `wrangler.local.toml`: archivo local con overrides, ignorado por git.
+
+Si vas a probar en local, copia los IDs reales en `wrangler.local.toml`. Si vas a desplegar por Cloudflare Build, asegúrate de que `wrangler.toml` ya contenga los IDs reales y no placeholders.
+
+Ejemplo de bindings para KV:
 
 ```toml
 [[kv_namespaces]]
 binding = "STORAGE_KV"
-id = "abc123..."  # ← Reemplaza con tu ID real
-preview_id = "xyz789..."  # ← Reemplaza con tu preview ID real
+id = "abc123..."
+preview_id = "xyz789..."
 ```
 
 ### 6. Probar Localmente
@@ -67,6 +75,8 @@ npm run dev
 ```
 
 Esto iniciará el worker en http://localhost:8787
+
+Si necesitas forzar un archivo específico en local, usa el config correspondiente en `wrangler`.
 
 ### 7. Probar los Endpoints
 
@@ -169,6 +179,12 @@ Notas:
 2. **Añade autenticación**: Para uso en producción, considera añadir autenticación (API keys, JWT, etc.)
 3. **Monitoreo**: Configura alertas y monitoreo en el dashboard de Cloudflare
 4. **Rate limiting**: Considera añadir límites de tasa para prevenir abuso
+
+## Notas de despliegue
+
+- El deploy automático de Cloudflare toma el `wrangler.toml` versionado en el repo.
+- `wrangler.local.toml` no se sube al repositorio y no afecta el deploy remoto.
+- Los secretos deben vivir en `.dev.vars` o en Cloudflare Secrets, no en archivos públicos.
 
 ## Solución de Problemas
 

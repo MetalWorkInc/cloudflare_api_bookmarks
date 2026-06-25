@@ -126,17 +126,15 @@ npm install
 git config core.hooksPath .githooks
 ```
 
-> Esto activa el hook `pre-commit` que impide commitear cambios accidentales a `wrangler.toml`.  
-> Usa `wrangler.local.toml` (ignorado por git) para tus valores reales de IDs y credenciales.
+> Esto activa el hook `pre-commit` que evita commitear cambios accidentales a `wrangler.toml`.  
+> Usa `wrangler.local.toml` para desarrollo local y `.dev.vars` para variables locales no versionadas.
 
-
-
-2. **Ejecutar en modo desarrollo:**
+3. **Ejecutar en modo desarrollo:**
 ```bash
 npm run dev
 ```
 
-3. **Probar la API:**
+4. **Probar la API:**
 ```powershell
 (Invoke-WebRequest -Uri "http://127.0.0.1:8787/" -Method GET -Headers @{"X-API-Token"="my-local-token-12345"}).Content
 ```
@@ -147,9 +145,18 @@ npm run dev
 npm run deploy
 ```
 
+Cloudflare Build despliega desde el `wrangler.toml` que queda en el commit. El archivo `wrangler.local.toml` no participa en el deploy remoto; solo se usa para desarrollo local o pruebas manuales.
+
 ## 🔐 Configuración
 
-Configura las variables de entorno en `.dev.vars` (desarrollo) o en el dashboard de Cloudflare (producción):
+Archivos de configuración del entorno:
+
+- `wrangler.toml`: configuración efectiva para deploy automático en Cloudflare Build.
+- `wrangler.base.toml`: plantilla pública de referencia.
+- `wrangler.local.toml`: overrides locales, ignorado por git.
+- `.dev.vars`: variables locales de desarrollo.
+
+Configura los secretos reales en `.dev.vars` para desarrollo o en el dashboard de Cloudflare para producción:
 
 ```
 API_TOKEN=your-secret-token-here
@@ -206,6 +213,13 @@ La API tiene CORS habilitado para permitir llamadas desde cualquier origen. Los 
 - **Cloudflare Workers**: Plataforma serverless
 - **KV Storage**: Almacenamiento key-value distribuido
 - **Wrangler**: CLI para desarrollo y despliegue
+
+## ⚙️ Flujo de entorno
+
+1. Edita `wrangler.base.toml` como referencia pública si necesitas documentar la configuración.
+2. Mantén `wrangler.toml` con la configuración real que usará Cloudflare Build.
+3. Usa `wrangler.local.toml` y `.dev.vars` solo para desarrollo local.
+4. No coloques secretos en archivos versionados; usa Cloudflare Secrets o variables locales no rastreadas.
 
 ## 📝 Notas
 
