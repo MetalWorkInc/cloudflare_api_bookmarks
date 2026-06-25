@@ -1,4 +1,4 @@
-wrangler.local.toml
+#wrangler.local.toml
 name = "statics"
 main = "src/index.js"
 compatibility_date = "2024-12-02"
