@@ -144,5 +144,6 @@ vite.config.ts.timestamp-*
 wrangler.toml
 !wrangler.base.toml
 wrangler.local.toml
+wrangler.generated.toml
 dist/
 worker/
