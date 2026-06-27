@@ -4,11 +4,13 @@
   "description": "Simple API for data using Cloudflare Workers",
   "main": "src/index.js",
   "scripts": {
-    "dev": "if exist wrangler.local.toml (wrangler dev --config wrangler.local.toml) else (wrangler dev)",
-    "dev:cf": "wrangler dev",
+    "dev": "wrangler dev",
+    "dev:local": "if exist wrangler.local.toml (wrangler dev --config wrangler.local.toml) else (wrangler dev)",    
     "deploy": "wrangler deploy",
     "build:ci": "node scripts/generate-wrangler.js",
     "deploy:ci": "node scripts/generate-wrangler.js && wrangler deploy --config wrangler.generated.toml",
+    "d1:all:local": "npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/table_calendar_agenda.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/table_payments.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/table_partners_environment.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/table_google_auth_log.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/table_curriculum.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/contable/01_schema.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/contable/02_seed_base_config.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/contable/03_views.sql && npx wrangler d1 execute datastoraged02 --local --config wrangler.local.toml --file=datastorages/contable/04_generar_asientos.sql",
+    "d1:all:remote": "npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/table_calendar_agenda.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/table_payments.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/table_partners_environment.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/table_google_auth_log.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/table_curriculum.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/contable/01_schema.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/contable/02_seed_base_config.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/contable/03_views.sql && npx wrangler d1 execute datastoraged02 --remote --config wrangler.local.toml --file=datastorages/contable/04_generar_asientos.sql",
     "test": "node test/api-test.js"
   },
   "keywords": [

@@ -15,7 +15,8 @@ CREATE TABLE curriculum_vitae (
     languages TEXT, -- JSON array stored as string
     certifications TEXT, -- JSON array stored as string
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    version TEXT DEFAULT '1.0'
 );
 
 -- Indexes for faster queries

@@ -2,9 +2,9 @@
 -- Generic payments backup + relationship to calendar events
 
 DROP TABLE IF EXISTS event_payments;
-DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS reg_payments;
 
-CREATE TABLE payments (
+CREATE TABLE reg_payments (
     id TEXT PRIMARY KEY,
     external_reference TEXT,
     provider TEXT NOT NULL,
@@ -41,24 +41,24 @@ CREATE TABLE event_payments (
     note TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES reg_events(id) ON DELETE CASCADE,
+    FOREIGN KEY (payment_id) REFERENCES reg_payments(id) ON DELETE CASCADE,
     CHECK (applied_amount >= 0)
 );
 
 -- Indexes for faster queries
 CREATE UNIQUE INDEX idx_payments_provider_payment_id
-ON payments(provider, provider_payment_id)
+ON reg_payments(provider, provider_payment_id)
 WHERE provider_payment_id IS NOT NULL;
 
 CREATE UNIQUE INDEX idx_payments_idempotency_key
-ON payments(idempotency_key)
+ON reg_payments(idempotency_key)
 WHERE idempotency_key IS NOT NULL;
 
-CREATE INDEX idx_payments_status ON payments(status);
-CREATE INDEX idx_payments_paid_at ON payments(paid_at DESC);
-CREATE INDEX idx_payments_payer_email ON payments(payer_email);
-CREATE INDEX idx_payments_created_at ON payments(created_at DESC);
+CREATE INDEX idx_payments_status ON reg_payments(status);
+CREATE INDEX idx_payments_paid_at ON reg_payments(paid_at DESC);
+CREATE INDEX idx_payments_payer_email ON reg_payments(payer_email);
+CREATE INDEX idx_payments_created_at ON reg_payments(created_at DESC);
 
 CREATE INDEX idx_event_payments_event_id ON event_payments(event_id);
 CREATE INDEX idx_event_payments_payment_id ON event_payments(payment_id);

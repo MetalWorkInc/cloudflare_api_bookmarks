@@ -378,6 +378,15 @@ function buildSesionResponse(response: SesionEnv, status = HTTP_STATUS_OK): Resp
   return jsonResponse(response, status);
 }
 
+function isValidBase64(value: string): boolean {
+  const normalized = value.trim();
+  if (!normalized || normalized.length % 4 !== 0) {
+    return false;
+  }
+
+  return /^[A-Za-z0-9+/]+={0,2}$/.test(normalized);
+}
+
 function encryptSesionData(serializedData: string, token: string): string {
   if (!token) return serializedData;
   const dataBytes = new TextEncoder().encode(serializedData);
@@ -391,15 +400,6 @@ function encryptSesionData(serializedData: string, token: string): string {
     binary += String.fromCharCode(byte);
   }
   return btoa(binary);
-}
-
-function isValidBase64(value: string): boolean {
-  const normalized = value.trim();
-  if (!normalized || normalized.length % 4 !== 0) {
-    return false;
-  }
-
-  return /^[A-Za-z0-9+/]+={0,2}$/.test(normalized);
 }
 
 function decryptSesionData(encryptedData: string, token: string): string {

@@ -10,7 +10,7 @@ export default function makeCalendarEventsService(env: Env) {
 
   async function listByCalendar(calendarId: string, includeCancelled = false): Promise<CalendarEvent[]> {
     const sql = includeCancelled
-      ? 'SELECT * FROM events WHERE calendar_id = ? ORDER BY start_at_utc ASC'
+      ? 'SELECT * FROM reg_events WHERE calendar_id = ? ORDER BY start_at_utc ASC'
       : 'SELECT * FROM events WHERE calendar_id = ? AND status <> ? ORDER BY start_at_utc ASC';
 
     const stmt = db.prepare(sql);
@@ -37,7 +37,7 @@ export default function makeCalendarEventsService(env: Env) {
   }
 
   async function getById(id: string): Promise<CalendarEvent | null> {
-    const row = await db.prepare('SELECT * FROM events WHERE id = ?').bind(id).first<CalendarEvent>();
+    const row = await db.prepare('SELECT * FROM reg_events WHERE id = ?').bind(id).first<CalendarEvent>();
     if (!row) return null;
 
     return {
@@ -63,7 +63,7 @@ export default function makeCalendarEventsService(env: Env) {
     const now = new Date().toISOString();
 
     await db.prepare(
-      'INSERT INTO events (id, calendar_id, title, description, location, start_at_utc, end_at_utc, is_all_day, is_exclusive, status, visibility, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO reg_events (id, calendar_id, title, description, location, start_at_utc, end_at_utc, is_all_day, is_exclusive, status, visibility, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
       id,
       data.calendar_id.trim(),

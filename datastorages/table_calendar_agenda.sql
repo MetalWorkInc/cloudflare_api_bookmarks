@@ -4,10 +4,10 @@ DROP TABLE IF EXISTS event_change_requests;
 DROP TABLE IF EXISTS event_participants;
 DROP TABLE IF EXISTS event_recurrence;
 DROP TABLE IF EXISTS event_reminders;
-DROP TABLE IF EXISTS events;
-DROP TABLE IF EXISTS calendars;
+DROP TABLE IF EXISTS reg_events;
+DROP TABLE IF EXISTS reg_calendars;
 
-CREATE TABLE calendars (
+CREATE TABLE reg_calendars (
     id TEXT PRIMARY KEY,
     owner_user_id TEXT NOT NULL,
     name TEXT NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE calendars (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE events (
+CREATE TABLE reg_events (
     id TEXT PRIMARY KEY,
     calendar_id TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE events (
     created_by TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    FOREIGN KEY (calendar_id) REFERENCES calendars(id) ON DELETE CASCADE,
+    FOREIGN KEY (calendar_id) REFERENCES reg_calendars(id) ON DELETE CASCADE,
     CHECK (end_at_utc > start_at_utc),
     CHECK (status IN ('confirmed', 'tentative', 'cancelled')),
     CHECK (visibility IN ('private', 'public'))
@@ -48,7 +48,7 @@ CREATE TABLE event_recurrence (
     timezone TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES reg_events(id) ON DELETE CASCADE
 );
 
 CREATE TABLE event_reminders (
@@ -58,7 +58,7 @@ CREATE TABLE event_reminders (
     channel TEXT NOT NULL DEFAULT 'app',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES reg_events(id) ON DELETE CASCADE,
     CHECK (minutes_before >= 0),
     CHECK (channel IN ('app', 'email', 'webhook'))
 );
@@ -76,7 +76,7 @@ CREATE TABLE event_participants (
     raw_payload TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES reg_events(id) ON DELETE CASCADE,
     CHECK (age IS NULL OR age >= 0)
 );
 
@@ -106,20 +106,20 @@ CREATE TABLE event_change_requests (
     reason TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES reg_events(id) ON DELETE CASCADE,
     CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled')),
     CHECK (original_end_at_utc > original_start_at_utc),
     CHECK (desired_end_at_utc > desired_start_at_utc)
 );
 
 -- Indexes for faster queries
-CREATE INDEX idx_calendars_owner ON calendars(owner_user_id);
-CREATE INDEX idx_calendars_created_at ON calendars(created_at DESC);
+CREATE INDEX idx_calendars_owner ON reg_calendars(owner_user_id);
+CREATE INDEX idx_calendars_created_at ON reg_calendars(created_at DESC);
 
-CREATE INDEX idx_events_calendar_start ON events(calendar_id, start_at_utc);
-CREATE INDEX idx_events_calendar_end ON events(calendar_id, end_at_utc);
-CREATE INDEX idx_events_start_at ON events(start_at_utc);
-CREATE INDEX idx_events_is_exclusive ON events(is_exclusive);
+CREATE INDEX idx_events_calendar_start ON reg_events(calendar_id, start_at_utc);
+CREATE INDEX idx_events_calendar_end ON reg_events(calendar_id, end_at_utc);
+CREATE INDEX idx_events_start_at ON reg_events(start_at_utc);
+CREATE INDEX idx_events_is_exclusive ON reg_events(is_exclusive);
 
 CREATE INDEX idx_recurrence_event_id ON event_recurrence(event_id);
 
@@ -136,14 +136,14 @@ CREATE INDEX idx_change_requests_requested_at ON event_change_requests(requested
 -- Enforce exclusivity in same calendar and overlapping time ranges.
 -- Conflict occurs when either the new event or the existing one is exclusive.
 CREATE TRIGGER trg_events_exclusive_insert
-BEFORE INSERT ON events
+BEFORE INSERT ON reg_events
 FOR EACH ROW
 BEGIN
     SELECT
     CASE
         WHEN EXISTS (
             SELECT 1
-            FROM events e
+            FROM reg_events e
             WHERE e.calendar_id = NEW.calendar_id
               AND e.id <> NEW.id
               AND NEW.start_at_utc < e.end_at_utc
@@ -155,14 +155,14 @@ BEGIN
 END;
 
 CREATE TRIGGER trg_events_exclusive_update
-BEFORE UPDATE ON events
+BEFORE UPDATE ON reg_events
 FOR EACH ROW
 BEGIN
     SELECT
     CASE
         WHEN EXISTS (
             SELECT 1
-            FROM events e
+            FROM reg_events e
             WHERE e.calendar_id = NEW.calendar_id
               AND e.id <> NEW.id
               AND NEW.start_at_utc < e.end_at_utc

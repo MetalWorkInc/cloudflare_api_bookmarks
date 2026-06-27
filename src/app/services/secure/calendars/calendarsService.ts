@@ -10,8 +10,8 @@ export default function makeCalendarsService(env: Env) {
   async function list(ownerUserId?: string): Promise<Calendar[]> {
     const hasOwner = !!ownerUserId && ownerUserId.trim() !== EMPTY_STRING;
     const sql = hasOwner
-      ? 'SELECT * FROM calendars WHERE owner_user_id = ? ORDER BY created_at DESC'
-      : 'SELECT * FROM calendars ORDER BY created_at DESC';
+      ? 'SELECT * FROM reg_calendars WHERE owner_user_id = ? ORDER BY created_at DESC'
+      : 'SELECT * FROM reg_calendars ORDER BY created_at DESC';
     const stmt = db.prepare(sql);
     const result = hasOwner
       ? await stmt.bind(ownerUserId!.trim()).all<Calendar>()
@@ -28,7 +28,7 @@ export default function makeCalendarsService(env: Env) {
   }
 
   async function getById(id: string): Promise<Calendar | null> {
-    const row = await db.prepare('SELECT * FROM calendars WHERE id = ?').bind(id).first<Calendar>();
+    const row = await db.prepare('SELECT * FROM reg_calendars WHERE id = ?').bind(id).first<Calendar>();
     if (!row) return null;
     return {
       id: row.id,
@@ -45,7 +45,7 @@ export default function makeCalendarsService(env: Env) {
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(
-      'INSERT INTO calendars (id, owner_user_id, name, timezone, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO reg_calendars (id, owner_user_id, name, timezone, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).bind(
       id,
       data.owner_user_id.trim(),
@@ -78,7 +78,7 @@ export default function makeCalendarsService(env: Env) {
     const now = new Date().toISOString();
 
     await db.prepare(
-      'UPDATE calendars SET owner_user_id = ?, name = ?, timezone = ?, color = ?, updated_at = ? WHERE id = ?'
+      'UPDATE reg_calendars SET owner_user_id = ?, name = ?, timezone = ?, color = ?, updated_at = ? WHERE id = ?'
     ).bind(nextOwner, nextName, nextTimezone, nextColor, now, id).run();
 
     return {

@@ -12,8 +12,8 @@ export default function makePaymentsService(env: Env) {
   async function list(status?: PaymentStatus): Promise<Payment[]> {
     const hasStatus = !!status;
     const sql = hasStatus
-      ? 'SELECT * FROM payments WHERE status = ? ORDER BY created_at DESC'
-      : 'SELECT * FROM payments ORDER BY created_at DESC';
+      ? 'SELECT * FROM reg_payments WHERE status = ? ORDER BY created_at DESC'
+      : 'SELECT * FROM reg_payments ORDER BY created_at DESC';
 
     const stmt = db.prepare(sql);
     const result = hasStatus
@@ -24,7 +24,7 @@ export default function makePaymentsService(env: Env) {
   }
 
   async function getById(id: string): Promise<Payment | null> {
-    const row = await db.prepare('SELECT * FROM payments WHERE id = ?').bind(id).first<Payment>();
+    const row = await db.prepare('SELECT * FROM reg_payments WHERE id = ?').bind(id).first<Payment>();
     return row ? mapRow(row) : null;
   }
 
@@ -33,7 +33,7 @@ export default function makePaymentsService(env: Env) {
     const now = new Date().toISOString();
 
     await db.prepare(
-      'INSERT INTO payments (id, external_reference, provider, provider_payment_id, status, currency, amount_total, amount_net, amount_fee, amount_tax, paid_at, payer_name, payer_email, payer_phone, description, metadata, raw_payload, idempotency_key, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO reg_payments (id, external_reference, provider, provider_payment_id, status, currency, amount_total, amount_net, amount_fee, amount_tax, paid_at, payer_name, payer_email, payer_phone, description, metadata, raw_payload, idempotency_key, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
       id,
       data.external_reference ? data.external_reference.trim() : EMPTY_STRING,
@@ -92,7 +92,7 @@ export default function makePaymentsService(env: Env) {
     const now = new Date().toISOString();
 
     await db.prepare(
-      'UPDATE payments SET external_reference = ?, provider = ?, provider_payment_id = ?, status = ?, currency = ?, amount_total = ?, amount_net = ?, amount_fee = ?, amount_tax = ?, paid_at = ?, payer_name = ?, payer_email = ?, payer_phone = ?, description = ?, metadata = ?, raw_payload = ?, idempotency_key = ?, updated_at = ? WHERE id = ?'
+      'UPDATE reg_payments SET external_reference = ?, provider = ?, provider_payment_id = ?, status = ?, currency = ?, amount_total = ?, amount_net = ?, amount_fee = ?, amount_tax = ?, paid_at = ?, payer_name = ?, payer_email = ?, payer_phone = ?, description = ?, metadata = ?, raw_payload = ?, idempotency_key = ?, updated_at = ? WHERE id = ?'
     ).bind(
       next.external_reference,
       next.provider,
