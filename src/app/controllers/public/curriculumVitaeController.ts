@@ -1,11 +1,6 @@
-import { jsonResponse } from '../../../lib/utils.js';
+import { jsonResponse , HTTP_STATUS_NOT_FOUND , HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../lib/utils.js';
 import { CurriculumVitae, CurriculumVitaeInput } from '../../models/CurriculumVitae';
 import type { Env } from '../../types/interface.ts';
-
-const HTTP_STATUS_CREATED = 201;
-const HTTP_STATUS_BAD_REQUEST = 400;
-const HTTP_STATUS_NOT_FOUND = 404;
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
 
 const ERR_FAILED_RETRIEVE_CURRICULUM_VITAE = 'Failed to retrieve curriculum vitae';
 const ERR_CURRICULUM_VITAE_NOT_FOUND = 'Curriculum vitae not found';

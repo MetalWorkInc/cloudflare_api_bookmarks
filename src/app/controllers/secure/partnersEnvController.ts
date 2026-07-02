@@ -1,13 +1,8 @@
-import { jsonResponse } from '../../../lib/utils.js';
+import { jsonResponse, HTTP_STATUS_CREATED, HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../lib/utils.js';
 import { PartnersEnv, PartnersEnvInput } from '../../models/PartnersEnv';
 import type { PartnersEnvSession } from '../../models/PartnersEnv.js';
 import type { Env } from '../../types/interface.ts';
-import makeSecureSessionGuard from './secureSessionGuard';
-
-const HTTP_STATUS_CREATED = 201;
-const HTTP_STATUS_BAD_REQUEST = 400;
-const HTTP_STATUS_NOT_FOUND = 404;
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
+import makeSecureSessionGuard from '../../guards/secureSessionGuard.js';
 
 const EMPTY_STRING = '';
 
@@ -38,8 +33,8 @@ interface UserSesionService {
   getSessionByToken(token: string): Promise<PartnersEnvSession | null>;
 }
 
-export default function makePartnersEnvController(partnerSvc: PartnersEnvService, userSesionService: UserSesionService) {
-  const validateSecureSession = makeSecureSessionGuard(userSesionService);
+export default function makePartnersEnvController(partnerSvc: PartnersEnvService, userSesionSvc: UserSesionService) {
+  const validateSecureSession = makeSecureSessionGuard(userSesionSvc);
 
   function withoutId(item: PartnersEnv) {
     const { id: _id, ...rest } = item;

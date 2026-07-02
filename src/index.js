@@ -8,10 +8,11 @@ import {
   makeCurriculumVitaeRouter,
   makeGoogleAuthLogRouter,
   makePartnersEnvRouter,
+  makePartnerRequestRouter,
   makeUserSesionRouter,
 } from './routes';
 import makeUserSesionTknService from './app/services/auth/userSesionTknService';
-import { jsonResponse } from './lib/utils.js';
+import { jsonResponse, HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_FORBIDDEN, HTTP_STATUS_NOT_FOUND, HTTP_STATUS_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from './lib/utils.js';
 
 const HEADER_API_TOKEN = 'X-API-Token';
 const HEADER_API_TOKEN_VALUE = 'x-api-token-value';
@@ -20,16 +21,9 @@ const HEADER_API_VAR_VALUE = 'var-value';
 const HEADER_SESSION_TOKEN = 'X-Session-Token';
 const HEADER_CONTENT_TYPE = 'Content-Type';
 
-const HTTP_STATUS_UNAUTHORIZED = 401;
-const HTTP_STATUS_FORBIDDEN = 403;
-const HTTP_STATUS_NOT_FOUND = 404;
-const HTTP_STATUS_FOUND = 302;
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
-
 const CORS_ALLOW_ORIGIN = '*';
 const CORS_ALLOW_METHODS = 'GET, POST, PUT, DELETE, OPTIONS';
 const CORS_ALLOW_HEADERS = `${HEADER_CONTENT_TYPE}, ${HEADER_API_TOKEN}, ${HEADER_SESSION_TOKEN}, ${HEADER_API_VAR}`;
-
 
 const ERR_UNAUTHORIZED = 'Unauthorized';
 const ERR_FORBIDDEN = 'Forbidden';
@@ -46,13 +40,16 @@ const FAVICON_PATH = '/favicon.ico';
 const FAVICON_REDIRECT_URL = 'https://droguier.cl/assets/icons/fav_icon.png';
 
 const ROUTE_DEFINITIONS = [
-  { prefix: '/bookmarks', makeRouter: makeBookmarksRouter, requiresSession: true },
+  //public routes that do not require session validation
   { prefix: '/curriculum', makeRouter: makeCurriculumVitaeRouter, requiresSession: false },
+  { prefix: '/session', makeRouter: makeUserSesionRouter, requiresSession: false },
+  { prefix: '/partner-request', makeRouter: makePartnerRequestRouter, requiresSession: false },
+  //private routes that require session validation
+  { prefix: '/bookmarks', makeRouter: makeBookmarksRouter, requiresSession: true },
   { prefix: '/partners', makeRouter: makePartnersEnvRouter, requiresSession: true },
-  { prefix: '/userSesion', makeRouter: makeUserSesionRouter, requiresSession: false },
-  { prefix: '/googleAuthLog', makeRouter: makeGoogleAuthLogRouter, requiresSession: true },
   { prefix: '/calendars', makeRouter: makeCalendarsRouter, requiresSession: true },
   { prefix: '/contable', makeRouter: makeContableRouter, requiresSession: true },
+  { prefix: '/googleLog', makeRouter: makeGoogleAuthLogRouter, requiresSession: true },
 ];
 
 /******************************************************************************/
@@ -91,9 +88,6 @@ async function handleRequest(request, env) {
     return rootResponse;
   }
   
-  // Initialize services
-  const userSesionTknService = makeUserSesionTknService(env);
-
   // Serve favicon via redirect without requiring API headers.
   if ((method === 'GET' || method === 'HEAD') && path === FAVICON_PATH) {
     return Response.redirect(FAVICON_REDIRECT_URL, HTTP_STATUS_FOUND);
@@ -109,7 +103,10 @@ async function handleRequest(request, env) {
   validateApiVar(request, env, method, path);
   
   // Handle Session Validation for routes that require it
+  // Initialize route config and dispatch to the appropriate router
   const routeConfig = findRouteConfig(path);
+  // Initialize services
+  const userSesionTknService = makeUserSesionTknService(env);
 
   if (routeConfig && routeConfig.requiresSession) {
     const sessionValidationError = await validateSession(request, userSesionTknService);
@@ -118,6 +115,7 @@ async function handleRequest(request, env) {
     }
   }
 
+  // Dispatch to the appropriate router based on the route config
   const routeResponse = await dispatchRoute(request, path, method, env, routeConfig);
   if (routeResponse) {
     return routeResponse;
@@ -132,6 +130,7 @@ async function handleRequest(request, env) {
 }
 
 
+/******************************************************************************/
 /******************************************************************************/
 function getCorsHeaders() {
   return {

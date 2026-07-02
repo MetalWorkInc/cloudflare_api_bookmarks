@@ -1,10 +1,7 @@
-import { jsonResponse } from '../../../lib/utils.js';
-import type { PartnersEnvSession } from '../../models/PartnersEnv.js';
+import { jsonResponse, HTTP_STATUS_UNAUTHORIZED, HTTP_STATUS_FORBIDDEN } from '../../lib/utils.js';
+import type { PartnersEnvSession } from '../models/PartnersEnv.js';
 
 const HEADER_SESSION_TOKEN = 'X-Session-Token';
-
-const HTTP_STATUS_UNAUTHORIZED = 401;
-const HTTP_STATUS_FORBIDDEN = 403;
 
 const ERR_UNAUTHORIZED = 'Unauthorized';
 const ERR_FORBIDDEN = 'Forbidden';
@@ -19,7 +16,7 @@ interface UserSesionService {
   getSessionByToken(token: string): Promise<PartnersEnvSession | null>;
 }
 
-export default function makeSecureSessionGuard(userSesionService: UserSesionService) {
+export default function makeSecureSessionGuard(userSesionSvc: UserSesionService) {
   return async function validateSecureSession(req: Request): Promise<Response | null> {
     const sessionToken = req.headers.get(HEADER_SESSION_TOKEN);
     if (!sessionToken) {
@@ -33,7 +30,7 @@ export default function makeSecureSessionGuard(userSesionService: UserSesionServ
       );
     }
 
-    const sessionEmail = await userSesionService.getEmail(sessionToken);
+    const sessionEmail = await userSesionSvc.getEmail(sessionToken);
     if (!sessionEmail) {
       return jsonResponse(
         {
@@ -45,7 +42,7 @@ export default function makeSecureSessionGuard(userSesionService: UserSesionServ
       );
     }
 
-    const expectedToken = await userSesionService.getToken(sessionEmail);
+    const expectedToken = await userSesionSvc.getToken(sessionEmail);
     if (sessionToken !== expectedToken || !expectedToken) {
       return jsonResponse(
         {
@@ -57,7 +54,7 @@ export default function makeSecureSessionGuard(userSesionService: UserSesionServ
       );
     }
 
-    const session = await userSesionService.getSessionByToken(sessionToken);
+    const session = await userSesionSvc.getSessionByToken(sessionToken);
     if (!session || typeof session.expiration_date !== 'number' || session.expiration_date < Date.now()) {
       return jsonResponse(
         {

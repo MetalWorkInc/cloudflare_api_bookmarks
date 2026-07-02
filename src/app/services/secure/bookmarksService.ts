@@ -1,21 +1,10 @@
-import { generateEncryptedId } from '../../../lib/utils.js';
+import { generateEncryptedId , encryptKey } from '../../../lib/utils.js';
 import type { Bookmark ,BookmarkInput } from '../../models/Bookmark';
 import type { Env } from '../../types/interface';
 
-const ALGO_SHA256 = 'SHA-256';
 const DEFAULT_SECRET_KEY = 'default-secret-key';
 const STORAGE_KEY_BOOKMARKS = 'BOOKMARKS_STORAGE';
 const EMPTY_STRING = '';
-
-const HASH_HEX_PAD_LENGTH = 2;
-
-async function encryptStorageKey(storageKey: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(storageKey + secret);
-  const hashBuffer = await crypto.subtle.digest(ALGO_SHA256, data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(HASH_HEX_PAD_LENGTH, '0')).join('');
-}
 
 export default function makeBookmarksService(env: Env) {
   const STORAGE_KEY = STORAGE_KEY_BOOKMARKS;
@@ -23,7 +12,7 @@ export default function makeBookmarksService(env: Env) {
   const SECRET = env.WORKER_VAR_X || DEFAULT_SECRET_KEY;
 
   async function getEncryptedKey(): Promise<string> {
-    return await encryptStorageKey(STORAGE_KEY, SECRET);
+    return await encryptKey(STORAGE_KEY, SECRET);
   }
 
   async function getAllBookmarks(): Promise<Bookmark[]> {

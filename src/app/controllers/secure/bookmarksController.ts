@@ -1,11 +1,7 @@
-import { jsonResponse } from '../../../lib/utils.js';
+import { jsonResponse, HTTP_STATUS_CREATED, HTTP_STATUS_INTERNAL_SERVER_ERROR, HTTP_STATUS_NOT_FOUND, HTTP_STATUS_BAD_REQUEST } from '../../../lib/utils.js';
 import type { PartnersEnvSession } from '../../models/PartnersEnv.js';
-import makeSecureSessionGuard from './secureSessionGuard';
-
-const HTTP_STATUS_CREATED = 201;
-const HTTP_STATUS_BAD_REQUEST = 400;
-const HTTP_STATUS_NOT_FOUND = 404;
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
+import { Bookmark, BookmarkInput } from '../../models/Bookmark';
+import makeSecureSessionGuard from '../../guards/secureSessionGuard.js';
 
 const ERR_FAILED_RETRIEVE_BOOKMARKS = 'Failed to retrieve bookmarks';
 const ERR_BOOKMARK_NOT_FOUND = 'Bookmark not found';
@@ -18,7 +14,6 @@ const ERR_FAILED_DELETE_BOOKMARK = 'Failed to delete bookmark';
 const MSG_BOOKMARK_CREATED = 'Bookmark created successfully';
 const MSG_BOOKMARK_UPDATED = 'Bookmark updated successfully';
 const MSG_BOOKMARK_DELETED = 'Bookmark deleted successfully';
-import { Bookmark, BookmarkInput } from '../../models/Bookmark';
 
 interface BookmarkService {
   list(): Promise<Bookmark[]>;

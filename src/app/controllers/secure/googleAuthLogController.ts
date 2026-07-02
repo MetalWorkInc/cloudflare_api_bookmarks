@@ -1,7 +1,7 @@
-import { jsonResponse } from '../../../lib/utils.js';
+import { jsonResponse, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../lib/utils.js';
 import type { GoogleAuthLogInput, GoogleAuthLogPaginatedResult } from '../../models/GoogleAuthLog.js';
 import { PartnersEnvSession } from '../../models/PartnersEnv.js';
-import makeSecureSessionGuard from './secureSessionGuard.js';
+import makeSecureSessionGuard from '../../guards/secureSessionGuard.js';
 
 interface GoogleAuthLogService {
   getByFilterPaginated(filter: GoogleAuthLogInput, page?: number, pageSize?: number): Promise<GoogleAuthLogPaginatedResult>;
@@ -18,9 +18,6 @@ interface UserSesionService {
   getToken(email: string): Promise<string>;
   getSessionByToken(token: string): Promise<PartnersEnvSession | null>;
 }
-
-
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;

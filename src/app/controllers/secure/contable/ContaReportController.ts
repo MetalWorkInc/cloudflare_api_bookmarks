@@ -1,4 +1,4 @@
-import { jsonResponse } from '../../../../lib/utils.js';
+import { jsonResponse, HTTP_STATUS_NOT_FOUND, HTTP_STATUS_INTERNAL_SERVER_ERROR } from '../../../../lib/utils.js';
 import type { PartnersEnvSession } from '../../../models/PartnersEnv.js';
 import type {
 	ContaReportResource,
@@ -7,10 +7,7 @@ import type {
 	ContaTableRow,
 } from '../../../models/contable/ContaReport.js';
 import type { Env } from '../../../types/interface.js';
-import makeSecureSessionGuard from '../secureSessionGuard';
-
-const HTTP_STATUS_NOT_FOUND = 404;
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
+import makeSecureSessionGuard from '../../../guards/secureSessionGuard.js';
 
 const ERR_RESOURCE_NOT_FOUND = 'Resource not found';
 const ERR_REPORT_NOT_FOUND = 'Report not found';
@@ -28,8 +25,8 @@ interface UserSesionService {
 	getSessionByToken(token: string): Promise<PartnersEnvSession | null>;
 }
 
-export default function makeContaReportController(contaSvc: ContaReportService, userSesionService: UserSesionService) {
-	const validateSecureSession = makeSecureSessionGuard(userSesionService);
+export default function makeContaReportController(contaReportSvc: ContaReportService, userSesionSvc: UserSesionService) {
+	const validateSecureSession = makeSecureSessionGuard(userSesionSvc);
 
 	function resolveLimit(req: Request): number | undefined {
 		const raw = new URL(req.url).searchParams.get('limit');
@@ -45,7 +42,7 @@ export default function makeContaReportController(contaSvc: ContaReportService, 
 			const sessionError = await validateSecureSession(req);
 			if (sessionError) return sessionError;
 
-			const data = await contaSvc.listTable(resource, resolveLimit(req));
+			const data = await contaReportSvc.listTable(resource, resolveLimit(req));
 			return jsonResponse({ success: true, data, count: data.length });
 		} catch (error) {
 			const err = error as Error;
@@ -58,7 +55,7 @@ export default function makeContaReportController(contaSvc: ContaReportService, 
 			const sessionError = await validateSecureSession(req);
 			if (sessionError) return sessionError;
 
-			const data = await contaSvc.getTableById(resource, id);
+			const data = await contaReportSvc.getTableById(resource, id);
 			if (!data) return jsonResponse({ success: false, error: ERR_RESOURCE_NOT_FOUND }, HTTP_STATUS_NOT_FOUND);
 			return jsonResponse({ success: true, data });
 		} catch (error) {
@@ -72,7 +69,7 @@ export default function makeContaReportController(contaSvc: ContaReportService, 
 			const sessionError = await validateSecureSession(req);
 			if (sessionError) return sessionError;
 
-			const data = await contaSvc.listReport(report, resolveLimit(req));
+			const data = await contaReportSvc.listReport(report, resolveLimit(req));
 			if (!Array.isArray(data)) {
 				return jsonResponse({ success: false, error: ERR_REPORT_NOT_FOUND }, HTTP_STATUS_NOT_FOUND);
 			}

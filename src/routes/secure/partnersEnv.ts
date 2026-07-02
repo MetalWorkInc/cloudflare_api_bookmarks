@@ -4,9 +4,9 @@ import makePartnersEnvController from '../../app/controllers/secure/partnersEnvC
 import type { Env } from '../../app/types/interface.js';
 
 export default function makePartnersEnvRouter(env: Env) {
-  const service = makePartnersEnvService(env);
-  const userSesionService = makeUserSesionTknService(env);
-  const controller = makePartnersEnvController(service, userSesionService);
+  const partnerSvc = makePartnersEnvService(env);
+  const userSesionSvc = makeUserSesionTknService(env);
+  const controller = makePartnersEnvController(partnerSvc, userSesionSvc);
 
   return async function route(request: Request, path: string, method: string): Promise<Response | null> {
     // path may be '/partners' or '/partners/:id' or '/partners/key/:key'

@@ -1,8 +1,5 @@
 import makeContaReportController from '../../../app/controllers/secure/contable/ContaReportController';
-import type {
-  ContaReportResource,
-  ContaTableResource,
-} from '../../../app/models/contable/ContaReport.js';
+import type { ContaReportResource, ContaTableResource } from '../../../app/models/contable/ContaReport.js';
 import makeContaReportService from '../../../app/services/secure/contable/contaReportService';
 import makeUserSesionTknService from '../../../app/services/auth/userSesionTknService';
 import type { Env } from '../../../app/types/interface.js';
@@ -27,9 +24,9 @@ const REPORT_RESOURCES = new Set<ContaReportResource>([
 ]);
 
 export default function makeContableRouter(env: Env) {
-  const service = makeContaReportService(env);
-  const userSesionService = makeUserSesionTknService(env);
-  const controller = makeContaReportController(service, userSesionService);
+  const contaReportSvc = makeContaReportService(env);
+  const userSesionSvc = makeUserSesionTknService(env);
+  const controller = makeContaReportController(contaReportSvc, userSesionSvc);
 
   return async function route(request: Request, path: string, method: string): Promise<Response | null> {
     const parts = path.split('/').filter(Boolean);

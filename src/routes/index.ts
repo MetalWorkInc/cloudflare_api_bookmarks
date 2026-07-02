@@ -1,5 +1,5 @@
 export { makeUserSesionRouter } from './auth';
-export { makeCurriculumVitaeRouter } from './public';
+export { makeCurriculumVitaeRouter, makePartnerRequestRouter } from './public';
 export {
   makeBookmarksRouter,
   makeCalendarsRouter,

@@ -1,4 +1,13 @@
-import { jsonResponse } from '../../../lib/utils.js';
+import { jsonResponse 
+  , encryptSesionData 
+  , decryptSesionData 
+  , HTTP_STATUS_OK
+  , HTTP_STATUS_CREATED
+  , HTTP_STATUS_ACCEPTED
+  , HTTP_STATUS_BAD_REQUEST
+  , HTTP_STATUS_FORBIDDEN
+  , HTTP_STATUS_INTERNAL_SERVER_ERROR
+ } from '../../../lib/utils.js';
 import type { PartnersEnv, PartnersEnvInput, PartnersEnvSession } from '../../models/PartnersEnv.js';
 import type { SesionEnv } from '../../models/Sesion.js';
 import { validateSesionEnv } from '../../models/Sesion.js';
@@ -22,13 +31,6 @@ interface PartnersEnvService {
 interface GoogleAuthLogService {
   create(data: GoogleAuthLogInput): Promise<unknown>;
 }
-
-const HTTP_STATUS_CREATED = 201;
-const HTTP_STATUS_ACCEPTED = 202;
-const HTTP_STATUS_OK = 200;
-const HTTP_STATUS_BAD_REQUEST = 400;
-const HTTP_STATUS_FORBIDDEN = 403;
-const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
 
 const HEADER_API_TOKEN = 'X-API-Token';
 const HEADER_SESSION_TOKEN = 'X-Session-Token';
@@ -69,13 +71,14 @@ export default function makeUserSesionController( userSesionService: UserSesionS
 
     const API_TOKEN = env.API_TOKEN || DEFAULT_API_TOKEN;
 
+
     /****************************************************************************************
      *  registrar_user(req: Request): Promise<Response> 
     ****************************************************************************************/
     async function registrar_user(req: Request): Promise<Response> {
       try {
         const inputData = await req.json() as { email?: string; pass?: string };
-        let sessionEmail = await validar_request(req, inputData) || null;
+        let sessionEmail = await validar_session_request(req, inputData) || null;
         return await fn_registrar_user(sessionEmail || '');
       } catch (err) {        
         const error = err as Error;
@@ -94,7 +97,7 @@ export default function makeUserSesionController( userSesionService: UserSesionS
     ****************************************************************************************/
     async function validar_user(req: Request): Promise<Response> {
       try {
-        let sessionEmail = await validar_request(req) || null;
+        let sessionEmail = await validar_session_request(req) || null;
 
         if (!sessionEmail) {
           const response: SesionEnv = {
@@ -249,9 +252,9 @@ export default function makeUserSesionController( userSesionService: UserSesionS
     }
 
     /****************************************************************************************
-     *  validar_request(req: Request): Promise<Response>
+     *  validar_session_request(req: Request): Promise<Response>
     ****************************************************************************************/
-    async function validar_request(req: Request, body?: { email?: string; pass?: string }): Promise<string | null> {
+    async function validar_session_request(req: Request, body?: { email?: string; pass?: string }): Promise<string | null> {
       var sessionEmail = null;
       try {
         var sessionToken = req.headers.get(HEADER_SESSION_TOKEN) || EMPTY_STRING;    
@@ -376,60 +379,6 @@ function buildSesionResponse(response: SesionEnv, status = HTTP_STATUS_OK): Resp
     return jsonResponse(fallback, HTTP_STATUS_INTERNAL_SERVER_ERROR);
   }
   return jsonResponse(response, status);
-}
-
-function isValidBase64(value: string): boolean {
-  const normalized = value.trim();
-  if (!normalized || normalized.length % 4 !== 0) {
-    return false;
-  }
-
-  return /^[A-Za-z0-9+/]+={0,2}$/.test(normalized);
-}
-
-function encryptSesionData(serializedData: string, token: string): string {
-  if (!token) return serializedData;
-  const dataBytes = new TextEncoder().encode(serializedData);
-  const tokenBytes = new TextEncoder().encode(token);
-  const output = new Uint8Array(dataBytes.length);
-  for (let i = 0; i < dataBytes.length; i += 1) {
-    output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
-  }
-  let binary = '';
-  for (const byte of output) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary);
-}
-
-function decryptSesionData(encryptedData: string, token: string): string {
-  if (!token) return encryptedData;
-  const normalized = encryptedData.trim();
-
-  if (!isValidBase64(normalized)) {
-    const error = new TypeError(MSG_INVALID_ENCRYPTED_DATA);
-    error.name = 'InvalidEncryptedDataError';
-    throw error;
-  }
-
-  try {
-    const binary = atob(normalized);
-    const dataBytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
-      dataBytes[i] = binary.charCodeAt(i);
-    }
-    const tokenBytes = new TextEncoder().encode(token);
-    const output = new Uint8Array(dataBytes.length);
-    for (let i = 0; i < dataBytes.length; i += 1) {
-      output[i] = dataBytes[i] ^ tokenBytes[i % tokenBytes.length];
-    }
-    return new TextDecoder().decode(output);
-  } catch (err) {
-    const error = err as Error;
-    const decryptError = new TypeError(`${MSG_INVALID_ENCRYPTED_DATA}: ${error.message}`);
-    decryptError.name = error.name || 'InvalidEncryptedDataError';
-    throw decryptError;
-  }
 }
 
 export function createPartnerEnvSesion(partner: PartnersEnv): PartnersEnvSession {

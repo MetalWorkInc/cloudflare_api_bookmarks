@@ -9,7 +9,7 @@ export default function makeGoogleAuthLogRouter(env: Env) {
   const controller = makeGoogleAuthLogController(service,userSesionService);
 
   return async function route(request: Request, path: string, method: string): Promise<Response | null> {
-    if (path === '/googleAuthLog/filter' && method === 'POST') return controller.filter(request);
+    if (path === '/googleLog/filter' && method === 'POST') return controller.filter(request);
 
     return null;
   };

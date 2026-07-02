@@ -1,25 +1,13 @@
-import { generateId } from '../../../lib/utils.js';
+import { generateId , encryptKey } from '../../../lib/utils.js';
 import { PartnersEnv, PartnersEnvInput } from '../../models/PartnersEnv.js';
 import type { Env } from '../../types/interface.js';
 
-const ALGO_SHA256 = 'SHA-256';
 const DEFAULT_SECRET_KEY = 'default-secret-key';
 const EMPTY_STRING = '';
 const DEFAULT_ACTIVE = 1;
 
 const ERR_EMAIL_ALREADY_EXISTS = 'Email already exists';
 const ERR_FAILED_FETCH_CREATED_PARTNER = 'Failed to fetch created partner environment';
-
-const HASH_HEX_PAD_LENGTH = 2;
-
-async function encryptKey(key: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(key + secret);
-  const hashBuffer = await crypto.subtle.digest(ALGO_SHA256, data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(HASH_HEX_PAD_LENGTH, '0')).join('');
-}
-
 
 export default function makePartnersEnvService(env: Env) {
   const db = env.datastoraged01;
@@ -134,7 +122,7 @@ export default function makePartnersEnvService(env: Env) {
   async function create(data: PartnersEnvInput): Promise<PartnersEnv> {    
     /**backoffice - simple rapid implement */    
     const emailLower = data.email.toLowerCase();
-    //const encryptedKey = await encryptKey(data.key, SECRET); // PROD CONSERVAR
+    
     const encryptedKey = await encryptKey(emailLower, SECRET); // PROD ELIMINAR
     const encryptedOriginalKey = await encryptKey(data.key, SECRET);
 
